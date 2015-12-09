@@ -38,7 +38,9 @@
 
 后缀最小suffmin。
 
-只有当某个元素的$prefmax_i$ <= $suffmin_i$时，那么就说明能从这里分组
+
+
+只有当某个元素的prefmax <= suffmin时，那么就说明能从这里分组
 
 [Submission](http://codeforces.com/contest/599/submission/14473234)
 
@@ -46,17 +48,17 @@
 
 ### 解题分析
 
-很容易发现，若n＊m的矩形包含x个不同的正方形，那么当$n < m$, 
+很容易发现，若n＊m的矩形包含x个不同的正方形，那么当n < m, 
 
-有$x = n*m + (n-1)*(m-1)+...+(n-n)*(m-n)$
+有![](http://latex.codecogs.com/gif.latex?x = n*m + (n-1)*(m-1)+...+(n-n)*(m-n))
 
-可得$x = n^2*m-(n+m)*\Sigma^{n-1}_{i=0}i+\Sigma^{n-1}_{i=0}i^2$
+可得![](http://latex.codecogs.com/gif.latex?x = n^2*m-(n+m)*\\Sigma^{n-1}_{i=0}i+\\Sigma^{n-1}_{i=0}i^2)
 
 通过运算可以得到
 
-$6x = 3mn^2+3mn-n^3+n$
+![](http://latex.codecogs.com/gif.latex?6x = 3mn^2+3mn-n^3+n)
 
-可知n最大不会超过$2\sqrt[3]{X}$
+可知n最大不会超过![](http://latex.codecogs.com/gif.latex?2\\sqrt[3]{X})
 
 所以暴力找一下n就好了。
 
