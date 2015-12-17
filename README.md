@@ -24,6 +24,7 @@ Solutions to programming problems in competitions and on
 ### 代码和解题报告的作者们
 
 [plusplus7](https://github.com/plusplus7)
+[Prince-Laharl](https://github.com/Prince-Laharl)
 
 ### 其他
 
