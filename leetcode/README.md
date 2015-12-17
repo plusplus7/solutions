@@ -384,6 +384,18 @@ DFS的时候，记录层数，把值放到相应的vector中
 
 一起从root开始往下递归即可
 
+### [Two Sum][54]
+
+给n个数，判断是否有两个数加起来等于某个特定的数
+
+O(n^2)可过
+
+### [Add Two Numbers][55]
+
+给两个数，但是这两个数是以单链表形式给出的，求两个数的和，结果同样以单链表的形式返回
+
+从链表头开始处理即可，注意进位的处理
+
 [1]: https://github.com/plusplus7/LeetCodeSolutions/blob/master/src/maximum_product_subarray.cc
 [2]: https://github.com/plusplus7/LeetCodeSolutions/blob/master/src/reverse_words_in_a_string.cc
 [3]: https://github.com/plusplus7/LeetCodeSolutions/blob/master/src/evaluate_reverse_polish_notation.cc
@@ -439,6 +451,8 @@ DFS的时候，记录层数，把值放到相应的vector中
 [51]: https://github.com/plusplus7/LeetCodeSolutions/blob/master/src/binary_tree_level_order_traversal.cc
 [52]: https://github.com/plusplus7/LeetCodeSolutions/blob/master/src/symmetric_tree.cc
 [53]: https://github.com/plusplus7/LeetCodeSolutions/blob/master/src/same_tree.cc
+[54]: https://github.com/plusplus7/solutions/blob/master/leetcode/src/two_sum.cc
+[55]: https://github.com/plusplus7/solutions/blob/master/leetcode/src/add_two_numbers.cc
 
 
 [WA_CLONE_GRAPH]: https://github.com/plusplus7/LeetCodeSolutions/blob/master/src/wa_clone_graph.cc
