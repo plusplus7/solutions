@@ -14,6 +14,7 @@ Bit Twiddling Hacks
 ###目录
 * [关于运算次数的统计方法](#关于运算次数的统计方法)
 * [计算整数的符号](#计算整数的符号)
+* [判断两整数符号是否相反](#判断两整数符号是否相反)
 
 ###关于运算次数的统计方法
 
@@ -77,3 +78,14 @@ sign = 1 ^ ((unsigned int)v >> (sizeof(int) * CHAR_BIT - 1)); // if v < 0 then 0
 2006年3月4日，Augus提出了几种更具移植性的代码版本，包括类型转换。
 
 2009年9月12日，[Rohit Gary](http://rpg-314.blogspot.com/)提出了集中支持非负数的代码版本。
+
+###判断两整数符号是否相反
+
+```c
+int x, y;               // input values to compare signs
+                        // 输入的数值放在变量x和y中，用于比较符号
+bool f = ((x ^ y) < 0); // true iff x and y have opposite signs
+                        // 当且仅当(iff) x和y的符号相反时返回true
+```
+
+2009年11月26日，Manfred Weis建议我加入这一条内容。
