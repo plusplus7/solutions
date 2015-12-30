@@ -15,6 +15,7 @@ Bit Twiddling Hacks
 * [关于运算次数的统计方法](#关于运算次数的统计方法)
 * [计算整数的符号](#计算整数的符号)
 * [判断两整数符号是否相反](#判断两整数符号是否相反)
+* [计算整数的绝对值(不使用分支语句)](#计算整数的绝对值(不使用分支语句))
 
 ###关于运算次数的统计方法
 
@@ -89,3 +90,37 @@ bool f = ((x ^ y) < 0); // true iff x and y have opposite signs
 ```
 
 2009年11月26日，Manfred Weis建议我加入这一条内容。
+
+### 计算整数的绝对值(不使用分支语句)
+```c
+int v;           // we want to find the absolute value of v
+                 // 我们希望算出变量v的绝对值
+unsigned int r;  // the result goes here
+                 // 答案保存在这里
+int const mask = v >> sizeof(int) * CHAR_BIT - 1;
+
+r = (v + mask) ^ mask;
+```
+
+一个简单的变形:
+
+```c
+r = (v ^ mask) - mask;
+```
+
+有些CPU并不支持计算整数绝对值的指令（也可以说有些编译器没能用上这些指令）。在有的机器上，分支判断操作非常昂贵，会消耗较多计算资源。在这些机器上，上面的表达式会比 r = (v < 0) ? -(unsigned)v : v 这种简单的实现更快一些，尽管他们的操作数都是相同的。
+
+2003年3月7日，Augus Duggan指出1989 ANSI C标准指明带符号数右移的结构是由编译器实现时定义(implementation-defined)的，所以这个技巧有可能不会正常工作。同时，我也阅读了ANSI C标准，发现ANSI C并没有要求数值一定要以二补数（two's complement，即补码）的形式表示出来，所以由于这个原因，上面的技巧（在一些极少部分仍使用一补数（one's complement）的古董机器上）也有可能不工作。
+
+2004年3月14日，Keith H. Duggar提出了上面的变形。这个版本比我一开始想出来的初始版本更好，r=(+1|(v>>(sizeof(int)\*CHAR_BIT-1)))\*v，其中有一次乘法是没用的。
+
+不幸的是，2000年6月6日，这个技巧已经被Vladimir Yu Volkonsky在美国申请了专利，并且归属于[Sun公司的Microsystems](http://www.sun.com/)。
+2006年8月13日，Yuriy Kaminskiy告诉我这个专利可能是无效的，因为这个技巧在申请专利之前就被人公开发表了，见1996年11月9日，由Agner Fog发表的[How to Optimize for the Pentium Processor](http://www.goof.com/pcg/doc/pentopt.txt)。Yuriy同时也提到这份文档在1997年被翻译成了俄语，所以Vladimir有可能阅读过。除此之外，The Internet Archive（网站时光倒流机器）网站也收录了这个老旧的链接。
+
+2007年1月30日，Peter Kankowski给我分享了一个他的[发现](http://www.strchr.com/optimized_abs_function)。这来源于他在观察微软的Visual C++编译器的输出时的发现。这个技巧在这里被采用为最优解法。
+
+(译者注，Peter发现了VC++的编译器有可能使用了之前那个被Sun公司专利保护的技巧，但在评论中也同时有人指出Sun公司的这个专利是无效的)
+
+2007年12月6日，Hai Jin提出反对意见，算法的结果是带符号的，所以在计算最大的负数时，结果会依然是负的。
+
+2008年4月15日，Andrew Shapira指出上面的那个简单实现的版本可能会溢出，需要一个(unsigned)来做强制类型转换；为了最大程度的兼容性，他提议使用(v < 0) ? (1 + ((unsigned)(-1-v))) : (unsigned)v。但是根据2008年7月9日的ISO C99标准，Vincent Lefèvre说服我删除了这个版本，因为即便是在非基于二补数的机器上，-(unsigned)v这条语句也会做我们希望他做的事情。在计算-(signed)v时，程序会通过将负数v增加2\*\*N来得到无符号类型的数，这个数正好是v的补码表示形式，我们令U等于这个数。然后将U的符号取负，就能得出结果，有-U=0-U=2\*\*N-U=2\*\*N-(v+2\*\*N)=-v=abs(v)。
