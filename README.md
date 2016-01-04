@@ -38,3 +38,5 @@
 # 其他
 
 [plusplus7的博客专栏](http://plusplus7.com/blog/post/daily_training_intro)
+
+[Prince-Laharl](http://prince-laharl.github.io/)
