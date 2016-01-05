@@ -15,7 +15,8 @@ Bit Twiddling Hacks
 * [关于运算次数的统计方法](#关于运算次数的统计方法)
 * [计算整数的符号](#计算整数的符号)
 * [判断两整数符号是否相反](#判断两整数符号是否相反)
-* [计算整数的绝对值(不使用分支语句)](#计算整数的绝对值(不使用分支语句))
+* [计算整数的绝对值(不使用分支指令)](#计算整数的绝对值(不使用分支指令))
+* [计算两个整数之间的最大值和最小值(不使用分支指令)](#计算两个整数之间的最大值和最小值(不使用分支指令))
 
 ###关于运算次数的统计方法
 
@@ -27,18 +28,18 @@ Bit Twiddling Hacks
 ```c
 int v;      // we want to find the sign of v
             // 我们希望得出v的符号（正负）
-int sign;   // the result goes here 
+int sign;   // the result goes here
             // 结果保留在这个变量里
 
 // CHAR_BIT is the number of bits per byte (normally 8).
 // 常量CHAR_BIT指是一个比特里包含多少位（通常情况下是8位）
-sign = -(v < 0);  // if v < 0 then -1, else 0. 
+sign = -(v < 0);  // if v < 0 then -1, else 0.
 // or, to avoid branching on CPUs with flag registers (IA32):
 // 或者，为了防止在使用flag registers的CPU(IA32架构上)上出现分支指令
 sign = -(int)((unsigned int)((int)v) >> (sizeof(int) * CHAR_BIT - 1));
 // or, for one less instruction (but not portable):
 // 或者，牺牲移植性来减少一个指令
-sign = v >> (sizeof(int) * CHAR_BIT - 1); 
+sign = v >> (sizeof(int) * CHAR_BIT - 1);
 
 ```
 
@@ -91,7 +92,7 @@ bool f = ((x ^ y) < 0); // true iff x and y have opposite signs
 
 2009年11月26日，Manfred Weis建议我加入这一条内容。
 
-### 计算整数的绝对值(不使用分支语句)
+### 计算整数的绝对值(不使用分支指令)
 ```c
 int v;           // we want to find the absolute value of v
                  // 我们希望算出变量v的绝对值
@@ -124,3 +125,39 @@ r = (v ^ mask) - mask;
 2007年12月6日，Hai Jin提出反对意见，算法的结果是带符号的，所以在计算最大的负数时，结果会依然是负的。
 
 2008年4月15日，Andrew Shapira指出上面的那个简单实现的版本可能会溢出，需要一个(unsigned)来做强制类型转换；为了最大程度的兼容性，他提议使用(v < 0) ? (1 + ((unsigned)(-1-v))) : (unsigned)v。但是根据2008年7月9日的ISO C99标准，Vincent Lefèvre说服我删除了这个版本，因为即便是在非基于二补数的机器上，-(unsigned)v这条语句也会做我们希望他做的事情。在计算-(signed)v时，程序会通过将负数v增加2\*\*N来得到无符号类型的数，这个数正好是v的补码表示形式，我们令U等于这个数。然后将U的符号取负，就能得出结果，有-U=0-U=2\*\*N-U=2\*\*N-(v+2\*\*N)=-v=abs(v)。
+
+### 计算两个整数之间的最大值和最小值(不使用分支指令)
+
+```c
+int x;  // we want to find the minimum of x and y
+int y;
+        // 我们希望找出x和y之间的最小值
+int r;  // the result goes here
+        // 结果保存到变量r
+r = y ^ ((x ^ y) & -(x < y)); // min(x, y)
+```
+
+这个技巧能工作的原因是当x<y, 那么-(x<y)数值的二进制补码会是全1（-1的补码是全1），所以r = y ^ (x ^ y) & ~0 = y ^ x ^ y = x。反之，如果x>=y，那么-(x<y)会是全0，所以r = y ^ ((x ^ y) & 0) = y。在有些分支操作非常昂贵的机器，和没有提供条件跳转指令(condition move instructions)的机器上，上面的技巧会比这种常见的写法更快一些，r = (x < y) ? x : y，尽管这种常见的写法只使用了两三个指令。（虽然通常来讲，这种简单实现是最好的）。需要注意的是，在有的机器上，计算x<y的值也需要使用分支指令，所以这个时候这个技巧对比普通的实现也没有任何优势。
+
+如果需要计算最大值，那么有
+
+```c
+r = x ^ ((x ^ y) & -(x < y)); // max(x, y)
+```
+
+更快，更炫酷(dirty)的版本：
+
+如果事先约定INT_MIN <= x - y <= INT_MAX，那么你就可以使用以下技巧。由于(x-y)只需要计算一次，所以这个版本会更快一些。
+
+```c
+r = y + ((x - y) & ((x - y) >> (sizeof(int) * CHAR_BIT - 1))); // min(x, y)
+r = x - ((x - y) & ((x - y) >> (sizeof(int) * CHAR_BIT - 1))); // max(x, y)
+```
+
+注意，1989年的ANSI C标准并没有指明带符号类型变量的右移行为，所以这个版本不具备兼容性。如果计算时由于溢出而导致抛出异常，x和y的值都应该是无符号型的或者被强制转换成无符号型的，来避免由于减法而导致不必要地抛出异常。然而，当进行右移操作是需要用强制类型转换，将数值转换成带符号的，这样才能根据数值的正负来产生全0和全1。
+
+2003年3月7日，Angus Duggan指出了右移操作的兼容性问题。
+2005年5月3日，Randal E.Bryant提示我只有在INT_MIN <= x - y <= INT_MAX的先决条件下，那个炫酷版本的代码才算完善，并且他还提出了之前那个较朴实的解法。这些问题都需要在炫酷版本的代码中考虑到。
+2005年7月6日，Nigel Horspoon注意到gcc在一款奔腾处理器上编译这份代码时，由于其计算(x-y)的方式，而产生了和之前的简单写法相同的代码。
+2008年7月9日，Vincent Lefèvre指出上一个版本中，即r = y + ((x - y) & -(x < y))，存在减法溢出的潜在风险。
+2009年6月2日，Timothy B. Terriberry建议使用异或来代替加减以避免强制类型转换和溢出的风险。
