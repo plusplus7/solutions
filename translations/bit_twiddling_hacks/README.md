@@ -19,6 +19,7 @@ Bit Twiddling Hacks
 * [计算两个整数之间的最大值和最小值(不使用分支指令)](#计算两个整数之间的最大值和最小值不使用分支指令)
 * [判断某个整数是不是2的次幂](#判断某个整数是不是2的次幂)
 * [符号扩展(固定位长)](#符号扩展固定位长)
+* [符号扩展(可变位长)](#符号扩展可变位长)
 
 ###关于运算次数的统计方法
 
@@ -209,3 +210,39 @@ int r = signextend<signed int,5>(x);  // sign extend 5 bit number x to r
 2005年5月2日，John Byrd找到了一处由于html格式问题导致的样式显示错误。
 
 2006年3月4日，Pat Wood指出ANSI C标准规定带符号的位域必须要用关键字“signed”来显式地指定其带符号，否则其符号位是未定义的。
+
+### 符号扩展(可变位长)
+
+有时，我们可能事先不知道位的长度，来完成符号扩展，上面的技巧就失效了。（也有可能是在某些不提供位域功能的编程语言，如Java）
+
+```c
+unsigned b; // number of bits representing the number in x
+            // 变量b指定需要扩展的位长
+int x;      // sign extend this b-bit number to r
+            // 需要将变量x中的数值符号扩展的结果保存到r中
+int r;      // resulting sign-extended number
+            // 存放计算结果到变量r
+int const m = 1U << (b - 1); // mask can be pre-computed if b is fixed
+                             // 如果b是常量，那么这个掩码可以被预处理
+
+x = x & ((1U << b) - 1);  // (Skip this if bits in x above position b are already zero.)
+                          // (如果超过b位的部分都已经是0了，那么这步可以跳过)
+r = (x ^ m) - m;
+```
+
+这段代码需要四次操作，但当位长是常量时，假设高位部分都已经清零了，那么这个技巧只需要两次操作。
+
+还有一个更快但是略微损失移植性的方法，这个方法不需要假设位长度超过b的部分，即高位部分，都已经被清零：
+
+```c
+int const m = CHAR_BIT * sizeof(x) - b;
+r = (x << m) >> m;
+```
+
+2004年6月13日，Sean A. Irvine建议我将符号扩展的方法添加进这个页面。同时他提供了这段代码m = (1 << (b - 1)) - 1; r = -(x & ~m) | x。后来我在这份代码的基础上，优化出了m = 1U << (b - 1); r = -(x & m) | x这个版本。
+
+但是在2007年5月11日，Shay Green提出了上面的这个比我少一个操作的版本。
+
+2008年10月15日，Vipin Sharma 建议我考虑增加一个步骤来解决如果x在除了b位长之外的二进制部分还存在1的情况。
+
+2009年12月31日，Chris Pirazzi建议我增加目前最快的版本，这个版本对于固定位长的符号扩展，只需要2次操作；对于变长的，也只需要3次操作。
