@@ -22,6 +22,7 @@ Bit Twiddling Hacks
 * [符号扩展(可变位长)](#符号扩展可变位长)
 * [使用3次运算的符号扩展(可变位长)](#使用3次运算的符号扩展可变位长)
 * [带条件判断的设置位或清除位(不使用分支指令)](#带条件判断的设置位或清除位不使用分支指令)
+* [带条件判断的将变量置为相反数(不使用分支指令)](#带条件判断的将变量置为相反数不使用分支指令)
 
 ###关于运算次数的统计方法
 
@@ -314,3 +315,34 @@ w = (w & ~m) | (-f & m);
 在某些架构上，不使用分支指令会比使用分支指令多出2个甚至更多的操作。举个例子，通过非正式速度测试表明，AMD Athlon™ XP 2100+能快5-10%； Intel Core 2 Duo的超标量版本能比能比前一个快16%。
 2003年12月11日，Gelnn Slayden告诉了我第一个算法。
 2007年4月3日，Marco Yu给我分享了超标量版本的算法，在两天后给我提出了一处显示排版错误。
+
+### 带条件判断的将变量置为相反数（不使用分支指令）
+
+在不使用分支指令的情况下，你可能会需要判断某个flag是否false，来将某个变量置为其相反数：
+
+```c
+bool fDontNegate;  // Flag indicating we should not negate v.
+                   // Flag标志，用于判断我们是否需要将变量v置为相反数
+int v;             // Input value to negate if fDontNegate is false.
+                   // 输入的数值保存在v中，当fDontNegate为false时，就将变量v置为相反数
+int r;             // result = fDontNegate ? v : -v;
+
+r = (fDontNegate ^ (fDontNegate - 1)) * v;
+```
+
+如果flag为true才将变量置为相反，那么可以用这个：
+```c
+bool fNegate;  // Flag indicating if we should negate v.
+               // Flag标志，用于判断我们是否需要将变量v置为相反数
+int v;         // Input value to negate if fNegate is true.
+               // 输入的数值保存在v中，当fDontNegate为true时，就将变量v置为相反数
+int r;         // result = fNegate ? -v : v;
+
+r = (v ^ -fNegate) + fNegate;
+```
+
+2009年6月2日，Avraham Plotnitzky建议我添加第一个版本。
+
+2009年6月8日，为了去除掉乘法，我想出了第二个版本。
+
+2009年11月26日，Alfonso De Gregorio指出某个地方缺少括号。这是一个合理的bug，所以它得到了指出bug的赏金。
