@@ -23,6 +23,9 @@ Bit Twiddling Hacks
 * [使用3次运算的符号扩展(可变位长)](#使用3次运算的符号扩展可变位长)
 * [带条件判断的设置位或清除位(不使用分支指令)](#带条件判断的设置位或清除位不使用分支指令)
 * [带条件判断的将变量置为相反数(不使用分支指令)](#带条件判断的将变量置为相反数不使用分支指令)
+* [根据掩码对两个数值进行位合并](#根据掩码对两个数值进行位合并)
+* [统计二进制位中1的个数(普通实现)](#统计二进制位中1的个数普通实现)
+* [统计二进制位中1的个数(查表法)](#统计二进制位中1的个数查表法)
 
 ###关于运算次数的统计方法
 
@@ -346,3 +349,80 @@ r = (v ^ -fNegate) + fNegate;
 2009年6月8日，为了去除掉乘法，我想出了第二个版本。
 
 2009年11月26日，Alfonso De Gregorio指出某个地方缺少括号。这是一个合理的bug，所以它得到了指出bug的赏金。
+
+### 根据掩码对两个数值进行位合并
+
+```c
+unsigned int a;    // value to merge in non-masked bits
+                   // 将变量a中没被掩码覆盖的位保留下来
+unsigned int b;    // value to merge in masked bits
+                   // 将变量b中被掩码覆盖的位保留下来
+unsigned int mask; // 1 where bits from b should be selected; 0 where from a.
+                   // 如果某一位是1，那么结果中对应的位就保存b所对应位置的值；如果是0，则保存a所对应位置的值。
+unsigned int r;    // result of (a & ~mask) | (b & mask) goes here
+                   // 这里保存(a & ~mask) | (b & mask)的结果
+
+r = a ^ ((a ^ b) & mask);
+```
+
+这个算法比这种简单的实现(a & ~mask) | (b & mask)节省一次操作。然而如果掩码是一个常量，那么这两种算法实际上都差不多。
+
+2006年2月9日，Ron Jeffery将这个算法发给我了。
+
+### 统计二进制位中1的个数(普通实现)
+
+```c
+unsigned int v; // count the number of bits set in v
+                // 计算变量v的二进制中1的个数
+unsigned int c; // c accumulates the total bits set in v
+                // 保存计算的结果
+
+for (c = 0; v; v >>= 1)
+{
+  c += v & 1;
+}
+```
+
+这个简单算法对于每一位都需要一次操作，直到结束。所以对于32位字长，且只有最高位为1时（即最坏情况），这个算法会操作32次。
+
+### 统计二进制位中1的个数(查表法)
+
+```c
+static const unsigned char BitsSetTable256[256] =
+{
+#   define B2(n) n,     n+1,     n+1,     n+2
+#   define B4(n) B2(n), B2(n+1), B2(n+1), B2(n+2)
+#   define B6(n) B4(n), B4(n+1), B4(n+1), B4(n+2)
+    B6(0), B6(1), B6(1), B6(2)
+};
+
+unsigned int v; // count the number of bits set in v
+                // 计算变量v的二进制中1的个数
+unsigned int c; // c accumulates the total bits set in v
+                // 保存计算的结果
+// Option 1:
+// 第一种：
+c = BitsSetTable256[v & 0xff] +
+    BitsSetTable256[(v >> 8) & 0xff] +
+    BitsSetTable256[(v >> 16) & 0xff] +
+    BitsSetTable256[v >> 24];
+
+// Option 2:
+// 第二种：
+unsigned char * p = (unsigned char *) &v;
+c = BitsSetTable256[p[0]] +
+    BitsSetTable256[p[1]] +
+    BitsSetTable256[p[2]] +
+    BitsSetTable256[p[3]];
+
+
+// To initially generate the table algorithmically:
+// 使用算法来预处理表的内容
+BitsSetTable256[0] = 0;
+for (int i = 0; i < 256; i++)
+{
+  BitsSetTable256[i] = (i & 1) + BitsSetTable256[i / 2];
+}
+```
+
+2009年7月14日，Hallvard Furuseth提出了宏压缩版本的预处理表的方法。
