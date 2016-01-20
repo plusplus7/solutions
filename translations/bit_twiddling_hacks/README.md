@@ -26,6 +26,7 @@ Bit Twiddling Hacks
 * [根据掩码对两个数值进行位合并](#根据掩码对两个数值进行位合并)
 * [统计二进制位中1的个数(普通实现)](#统计二进制位中1的个数普通实现)
 * [统计二进制位中1的个数(查表法)](#统计二进制位中1的个数查表法)
+* [统计二进制位中1的个数(14位字长, 24位字长, 32位字长, 64位架构下)](#统计二进制位中1的个数14位字长, 24位字长, 32位字长, 64位架构下)
 
 ###关于运算次数的统计方法
 
@@ -426,3 +427,37 @@ for (int i = 0; i < 256; i++)
 ```
 
 2009年7月14日，Hallvard Furuseth提出了宏压缩版本的预处理表的方法。
+
+### 统计14位字长，24位字长，32位字长的二进制位中1的个数(64位架构下)
+
+```c
+unsigned int v; // count the number of bits set in v
+                // 计算变量v的二进制中1的个数
+unsigned int c; // c accumulates the total bits set in v
+                // 保存计算的结果
+
+// option 1, for at most 14-bit values in v:
+// 第一种情况，只计算统计变量v中的14位
+c = (v * 0x200040008001ULL & 0x111111111111111ULL) % 0xf;
+
+// option 2, for at most 24-bit values in v:
+// 第二种情况，只计算统计变量v中的24位
+c =  ((v & 0xfff) * 0x1001001001001ULL & 0x84210842108421ULL) % 0x1f;
+c += (((v & 0xfff000) >> 12) * 0x1001001001001ULL & 0x84210842108421ULL)
+     % 0x1f;
+
+// option 3, for at most 32-bit values in v:
+// 第三种情况，只计算统计变量v中的32位
+c =  ((v & 0xfff) * 0x1001001001001ULL & 0x84210842108421ULL) % 0x1f;
+c += (((v & 0xfff000) >> 12) * 0x1001001001001ULL & 0x84210842108421ULL) %
+     0x1f;
+c += ((v >> 24) * 0x1001001001001ULL & 0x84210842108421ULL) % 0x1f;
+```
+
+这个算法需要在支持快速模除的64位CPU上才能达到高性能的效果。第一种情况只需要3次操作，第二种需要10次，第三种需要15次。
+
+Rich Schroeppel最初想出了一个和第一种类似的9位长版本，见Programming Hacks的这一章节[Beeler, M., Gosper, R. W., and Schroeppel, R. HAKMEM. MIT AI Memo 239, Feb. 29, 1972](http://www.inwap.com/pdp10/hbaker/hakmem/hakmem.html)。他的想法是收此启发，并最终由Sean Anderson完成设计。
+
+2005年5月3日，Randal E.Byrant提了几个bug修复补丁。
+
+2007年2月1日，Bruce Dawson对原来的12位版本做了一些调整，将其变成了兼容性更好的14位版本，并且保持操作数不变。
