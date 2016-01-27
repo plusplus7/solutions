@@ -26,6 +26,7 @@ Bit Twiddling Hacks
 * [根据掩码对两个数值进行位合并](#根据掩码对两个数值进行位合并)
 * [统计二进制位中1的个数(普通实现)](#统计二进制位中1的个数普通实现)
 * [统计二进制位中1的个数(查表法)](#统计二进制位中1的个数查表法)
+* [统计二进制位中1的个数(Brian Kernighan方法)](#统计二进制位中1的个数Brian Kernighan方法)
 * [统计二进制位中1的个数(14位字长, 24位字长, 32位字长, 64位架构下)](#统计14位字长24位字长32位字长的二进制位中1的个数64位架构下)
 
 ###关于运算次数的统计方法
@@ -427,6 +428,26 @@ for (int i = 0; i < 256; i++)
 ```
 
 2009年7月14日，Hallvard Furuseth提出了宏压缩版本的预处理表的方法。
+
+### 统计二进制位中1的个数(Brian Kernighan方法)
+
+```c
+unsigned int v; // count the number of bits set in v
+                // 计算变量v的二进制中1的个数
+unsigned int c; // c accumulates the total bits set in v
+                // 保存计算的结果
+for (c = 0; v; c++)
+{
+  v &= v - 1; // clear the least significant bit set
+              // 清除掉从最低位到最高位数的第一个为1的位
+}
+```
+
+Brian Kernighan的方法运算次数取决于二进制位中1的个数。所以如果一个32位字长的数，只有最高位是1，那么这个算法只会执行1次。
+
+1988年，发布于《C程序设计语言》（第二版），作者Brian W. Kernighan和Dennis M. Ritchie。在此书的练习2-9中提到了这个算法。
+
+2006年4月19日，Don Knuth向我指出这个算法，“是被Peter Wegner首先在CACM 3 (1960), 322发表的”。（同时也被Derrick Lehmer独立发现，并且在1964年由Beckenbach编辑发表在一本书上）
 
 ### 统计14位字长，24位字长，32位字长的二进制位中1的个数(64位架构下)
 
