@@ -29,6 +29,7 @@ Bit Twiddling Hacks
 * [统计二进制位中1的个数(Brian Kernighan方法)](#统计二进制位中1的个数brian-kernighan方法)
 * [统计二进制位中1的个数(14位字长, 24位字长, 32位字长, 64位架构下)](#统计14位字长24位字长32位字长的二进制位中1的个数64位架构下)
 * [统计二进制位中1的个数(并行计算的方法)](#统计二进制位中1的个数并行计算的方法)
+* [统计从最高位到指定的某位之间的二进制位1的个数](#统计从最高位到指定的某位之间的二进制位1的个数)
 
 ###关于运算次数的统计方法
 
@@ -536,3 +537,32 @@ c = (T)(v * ((T)~(T)0/255)) >> (sizeof(T) - 1) * CHAR_BIT; // count
 ```
 
 在[Ian Ashdown's nice newsgroup post](http://groups.google.com/groups?q=reverse+bits&amp;num=100&amp;hl=en&amp;group=comp.graphics.algorithms&amp;imgsafe=off&amp;safe=off&amp;rnum=2&amp;ic=1&amp;selm=4fulhm%248dn%40atlas.uniserve.com)还可以看到更多关于计算二进制位中1个数（也被人称为sideways addition）的相关信息。
+
+### 统计从最高位到指定的某位之间的二进制位1的个数
+
+这个方法是用来计算某一位的rank，意思是统计从最高位到指定的某位之间二进制位1的个数
+
+```c
+uint64_t v; // Compute the rank (bits set) in v from the MSB（最高位） to pos.
+            // 计算v中从第pos位到最高位的rank(二进制位1的个数)
+unsigned int pos; // Bit position to count bits upto.
+                  // 指定某一位，向最高位统计
+uint64_t r; // Resulting rank of bit at pos goes here.
+            // 保存统计的结果
+
+// Shift out bits after given position.
+// 将其余的位右移出去
+r = v >> (sizeof(v) * CHAR_BIT - pos);
+// Count set bits in parallel.
+// 并行地统计1的个数
+// r = (r & 0x5555...) + ((r >> 1) & 0x5555...);
+r = r - ((r >> 1) & ~0UL/3);
+// r = (r & 0x3333...) + ((r >> 2) & 0x3333...);
+r = (r & ~0UL/5) + ((r >> 2) & ~0UL/5);
+// r = (r & 0x0f0f...) + ((r >> 4) & 0x0f0f...);
+r = (r + (r >> 4)) & ~0UL/17;
+// r = r % 255;
+r = (r * (~0UL/255)) >> ((sizeof(v) - 1) * CHAR_BIT);
+```
+
+2009年11月21日，Juha Järvi将这个算法发给了我，这个算法是下一个算法（给定从某位到最高位1的个数，推算出该位的位置）的逆运算。
