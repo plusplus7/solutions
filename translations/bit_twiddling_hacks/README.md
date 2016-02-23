@@ -31,6 +31,8 @@ Bit Twiddling Hacks
 * [统计二进制位中1的个数(并行计算的方法)](#统计二进制位中1的个数并行计算的方法)
 * [统计从最高位到指定的某位之间的二进制位1的个数](#统计从最高位到指定的某位之间的二进制位1的个数)
 * [给定从某位到最高位1的个数，推算该位的位置](#给定从某位到最高位1的个数，推算该位的位置)
+* [计算奇偶校验位（普通实现）](#计算奇偶校验位普通实现)
+* [计算奇偶校验位（查表法）](#计算奇偶校验位查表法)
 
 ###关于运算次数的统计方法
 
@@ -612,3 +614,55 @@ r = (r * (~0UL/255)) >> ((sizeof(v) - 1) * CHAR_BIT);
 如果在你的CPU上分支指令速度足够快，可以考虑将使用被注释掉的那些if语句，将对应的其它语句注释掉。
 
 2009年11月21日，Juha Järvi将这个发给了我。
+
+### 计算奇偶校验位（普通实现）
+
+```c
+unsigned int v;       // word value to compute the parity of
+                      // 需要计算的值保存在变量v中
+bool parity = false;  // parity will be the parity of v
+                      // 变量parity保存v的奇偶校验位
+while (v)
+{
+  parity = !parity;
+  v = v & (v - 1);
+}
+```
+
+上面这段代码实现使用了类似Brian Kernigan的统计二进制位中1个数的方法。二进制中有多少个1，这个算法就会计算多少次。
+
+### 计算奇偶校验位（查表法）
+
+```c
+static const bool ParityTable256[256] = 
+{
+#   define P2(n) n, n^1, n^1, n
+#   define P4(n) P2(n), P2(n^1), P2(n^1), P2(n)
+#   define P6(n) P4(n), P4(n^1), P4(n^1), P4(n)
+    P6(0), P6(1), P6(1), P6(0)
+};
+
+unsigned char b;  // byte value to compute the parity of
+                  // 需要计算的值保存在变量b中
+bool parity = ParityTable256[b];
+
+// OR, for 32-bit words:
+// 或者，32位字长下
+unsigned int v;
+v ^= v >> 16;
+v ^= v >> 8;
+bool parity = ParityTable256[v & 0xff];
+
+// Variation:
+// 变种
+unsigned char * p = (unsigned char *) &v;
+parity = ParityTable256[p[0] ^ p[1] ^ p[2] ^ p[3]];
+```
+
+2005年5月3日，Randal E.Bryant提出了使用变量p的那个变种版本。
+
+2005年9月27日，Bruce Rawles发现了表中有一处变量名拼写错误，并获得了10美刀的奖励。
+
+2006年10月9日，Fabrice Bellard提出了32位字长的变种，这个变种只需要查表一次；最初的版本需要4次查表（每个字节一次），明显更慢一些。
+
+2009年7月14日，Hallvard Furuseth提出用宏来精简表的长度。
