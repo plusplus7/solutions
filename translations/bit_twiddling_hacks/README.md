@@ -40,6 +40,7 @@ Bit Twiddling Hacks
 * [交换数值（使用异或）](#交换数值使用异或)
 * [指定范围，交换数值的二进制位（使用异或）](#指定范围交换数值的二进制位使用异或)
 * [位的反转（朴素方法）](#位的反转朴素方法)
+* [位的反转（查表法）](#位的反转查表法)
 
 ###关于运算次数的统计方法
 
@@ -797,3 +798,38 @@ r <<= s; // shift when v's highest bits are zero
 2005年5月18日，Behdad Esfabod指出一个改动，可以让少循环一次。
 
 2007年2月6日，Liyong Zhou给出了一个更好的版本，如果v不是0的话才进入循环，而不是循环遍历完所有位，这样可以早一些退出循环。
+
+### 位的反转（查表法）
+
+```c
+static const unsigned char BitReverseTable256[256] =
+{
+#   define R2(n)     n,     n + 2*64,     n + 1*64,     n + 3*64
+#   define R4(n) R2(n), R2(n + 2*16), R2(n + 1*16), R2(n + 3*16)
+#   define R6(n) R4(n), R4(n + 2*4 ), R4(n + 1*4 ), R4(n + 3*4 )
+    R6(0), R6(2), R6(1), R6(3)
+};
+
+unsigned int v; // reverse 32-bit value, 8 bits at time
+                // 需要反转的32位值，每次反转8位
+unsigned int c; // c will get v reversed
+                // 变量c结果保存v反转后的值
+
+// Option 1:
+c = (BitReverseTable256[v & 0xff] << 24) |
+    (BitReverseTable256[(v >> 8) & 0xff] << 16) |
+    (BitReverseTable256[(v >> 16) & 0xff] << 8) |
+    (BitReverseTable256[(v >> 24) & 0xff]);
+
+// Option 2:
+unsigned char * p = (unsigned char *) &v;
+unsigned char * q = (unsigned char *) &c;
+q[3] = BitReverseTable256[p[0]];
+q[2] = BitReverseTable256[p[1]];
+q[1] = BitReverseTable256[p[2]];
+q[0] = BitReverseTable256[p[3]];
+```
+
+假定你的CPU可以轻松存取字节，那么第一个方法需要17次左右的操作，第二个需要12个。
+
+2009年7月14日，Hallvard Furuseth提供了这个宏压缩的表。
