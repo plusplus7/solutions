@@ -45,7 +45,7 @@ Bit Twiddling Hacks
 * [单字节的位反转（4次操作，需要64位乘，不需要除法）](#单字节的位反转4次操作需要64位乘不需要除法)
 * [单字节的位反转（7次操作，不需要64位操作）](#单字节的位反转7次操作不需要64位操作)
 * [N位长的串的位反转（5*lg(N)次操作，并行）](#n位长的串的位反转5lgn次操作并行)
-* [手工计算模除（模数是 1<<s 时）](#手工计算模除模数是 1<<s 时)
+* [手工计算模除（模数是 1<<s 时）](#手工计算模除模数是1<<s时)
 
 ###关于运算次数的统计方法
 
@@ -554,6 +554,14 @@ c = (T)(v * ((T)~(T)0/255)) >> (sizeof(T) - 1) * CHAR_BIT; // count
 
 在[Ian Ashdown's nice newsgroup post](http://groups.google.com/groups?q=reverse+bits&amp;num=100&amp;hl=en&amp;group=comp.graphics.algorithms&amp;imgsafe=off&amp;safe=off&amp;rnum=2&amp;ic=1&amp;selm=4fulhm%248dn%40atlas.uniserve.com)还可以看到更多关于计算二进制位中1个数（也被人称为sideways addition）的相关信息。
 
+2005年12月14日，Charlie Gordon提出了一种方法，可以让纯平行计算的版本减少一次操作。2005年12月30日，Don Clugston在此之上又优化掉了3次操作。
+
+2006年1月8日，Eric Cole指出了我在按照Don的建议修改本文时留下的一处显示错误。
+
+2006年11月17日，Eric提出了最好计算方法的可变位长推广方案。
+
+2007年4月5日，Al Williams发现我在第一个方法中留下了一行无用的代码。
+
 ### 统计从最高位到指定的某位之间的二进制位1的个数
 
 这个方法是用来计算某一位的rank，意思是统计从最高位到指定的某位之间二进制位1的个数
@@ -946,3 +954,18 @@ while ((s >>= 1) > 0)
 2005年9月13日，Ken Raeburn提出了第二个变种。
 
 2006年3月19日，Veldmeijer提到，第一个版本的算法的最后一行可以不用位与操作。
+
+### 手工计算模除（模数是 1<<s 时）
+
+```c
+const unsigned int n;          // numerator
+                               // 变量n为分子（被模除的数）
+const unsigned int s;
+const unsigned int d = 1U << s; // So d will be one of: 1, 2, 4, 8, 16, 32, ...
+                                // 那么变量d从小到大依次为:1, 2, 4, 8, 16, 32, ...
+unsigned int m;                // m will be n % d
+                               // m保存n%d的结果
+m = n & (d - 1);
+```
+
+这个技巧大多数程序员都会，为了保持完整性，这里还是把这个技巧放在了这里。
