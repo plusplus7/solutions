@@ -21,6 +21,33 @@ Bit Twiddling Hacks
 * [符号扩展(固定位长)](#符号扩展固定位长)
 * [符号扩展(可变位长)](#符号扩展可变位长)
 * [使用3次运算的符号扩展(可变位长)](#使用3次运算的符号扩展可变位长)
+* [带条件判断的设置位或清除位(不使用分支指令)](#带条件判断的设置位或清除位不使用分支指令)
+* [带条件判断的将变量置为相反数(不使用分支指令)](#带条件判断的将变量置为相反数不使用分支指令)
+* [根据掩码对两个数值进行位合并](#根据掩码对两个数值进行位合并)
+* [统计二进制位中1的个数(普通实现)](#统计二进制位中1的个数普通实现)
+* [统计二进制位中1的个数(查表法)](#统计二进制位中1的个数查表法)
+* [统计二进制位中1的个数(Brian Kernighan方法)](#统计二进制位中1的个数brian-kernighan方法)
+* [统计二进制位中1的个数(14位字长, 24位字长, 32位字长, 64位架构下)](#统计14位字长24位字长32位字长的二进制位中1的个数64位架构下)
+* [统计二进制位中1的个数(并行计算的方法)](#统计二进制位中1的个数并行计算的方法)
+* [统计从最高位到指定的某位之间的二进制位1的个数](#统计从最高位到指定的某位之间的二进制位1的个数)
+* [给定从某位到最高位1的个数，推算该位的位置](#给定从某位到最高位1的个数推算该位的位置)
+* [计算奇偶校验位（普通实现）](#计算奇偶校验位普通实现)
+* [计算奇偶校验位（查表法）](#计算奇偶校验位查表法)
+* [计算单个字节的奇偶校验位（使用64位的乘法和模除）](#计算单个字节的奇偶校验位使用64位的乘法和模除)
+* [计算单个字的奇偶校验位（使用乘法）](#计算单个字的奇偶校验位使用乘法)
+* [计算奇偶校验位（并行计算）](#计算奇偶校验位并行计算)
+* [交换数值（使用加法和减法）](#交换数值使用加法和减法)
+* [交换数值（使用异或）](#交换数值使用异或)
+* [指定范围，交换数值的二进制位（使用异或）](#指定范围交换数值的二进制位使用异或)
+* [位的反转（朴素方法）](#位的反转朴素方法)
+* [位的反转（查表法）](#位的反转查表法)
+* [单字节的位反转（3次操作，需要64位乘和模）](#单字节的位反转3次操作需要64位乘和模)
+* [单字节的位反转（4次操作，需要64位乘，不需要除法）](#单字节的位反转4次操作需要64位乘不需要除法)
+* [单字节的位反转（7次操作，不需要64位操作）](#单字节的位反转7次操作不需要64位操作)
+* [N位长的串的位反转（5*lg(N)次操作，并行）](#n位长的串的位反转5lgn次操作并行)
+* [手工计算模除（模数是 1<<s 时）](#手工计算模除模数是-1s-时)
+* [手工计算模除（模数是 (1<<s)-1 时）](#手工计算模除模数是-1s-1-时)
+* [手工计算模除（模数是 (1<<s)-1 时，并行）](#手工计算模除模数是-1s-1-时并行)
 
 ###关于运算次数的统计方法
 
@@ -292,3 +319,774 @@ r = (x << s) >> s;
 ```
 
 2005年3月3日，Randal E.Bryant指出了一个最初版本的bug(即使用查表的版本)，当x和b都为1时，这个技巧就会失效。
+
+### 带条件判断的设置位或清除位（不使用分支指令）
+
+```c
+bool f;         // conditional flag
+                // 使用这个标志来表示条件判断
+unsigned int m; // the bit mask
+                // 位掩码
+unsigned int w; // the word to modify:  if (f) w |= m; else w &= ~m;
+                // 需要进行操作的变量
+
+w ^= (-f ^ w) & m;
+
+// OR, for superscalar CPUs:
+// 在一些超标量架构的CPU上，也可以这样:
+w = (w & ~m) | (-f & m);
+```
+
+在某些架构上，不使用分支指令会比使用分支指令多出2个甚至更多的操作。举个例子，通过非正式速度测试表明，AMD Athlon™ XP 2100+能快5-10%； Intel Core 2 Duo的超标量版本能比能比前一个快16%。
+2003年12月11日，Gelnn Slayden告诉了我第一个算法。
+2007年4月3日，Marco Yu给我分享了超标量版本的算法，在两天后给我提出了一处显示排版错误。
+
+### 带条件判断的将变量置为相反数（不使用分支指令）
+
+在不使用分支指令的情况下，你可能会需要判断某个flag是否false，来将某个变量置为其相反数：
+
+```c
+bool fDontNegate;  // Flag indicating we should not negate v.
+                   // Flag标志，用于判断我们是否需要将变量v置为相反数
+int v;             // Input value to negate if fDontNegate is false.
+                   // 输入的数值保存在v中，当fDontNegate为false时，就将变量v置为相反数
+int r;             // result = fDontNegate ? v : -v;
+
+r = (fDontNegate ^ (fDontNegate - 1)) * v;
+```
+
+如果flag为true才将变量置为相反，那么可以用这个：
+```c
+bool fNegate;  // Flag indicating if we should negate v.
+               // Flag标志，用于判断我们是否需要将变量v置为相反数
+int v;         // Input value to negate if fNegate is true.
+               // 输入的数值保存在v中，当fDontNegate为true时，就将变量v置为相反数
+int r;         // result = fNegate ? -v : v;
+
+r = (v ^ -fNegate) + fNegate;
+```
+
+2009年6月2日，Avraham Plotnitzky建议我添加第一个版本。
+
+2009年6月8日，为了去除掉乘法，我想出了第二个版本。
+
+2009年11月26日，Alfonso De Gregorio指出某个地方缺少括号。这是一个合理的bug，所以它得到了指出bug的赏金。
+
+### 根据掩码对两个数值进行位合并
+
+```c
+unsigned int a;    // value to merge in non-masked bits
+                   // 将变量a中没被掩码覆盖的位保留下来
+unsigned int b;    // value to merge in masked bits
+                   // 将变量b中被掩码覆盖的位保留下来
+unsigned int mask; // 1 where bits from b should be selected; 0 where from a.
+                   // 如果某一位是1，那么结果中对应的位就保存b所对应位置的值；如果是0，则保存a所对应位置的值。
+unsigned int r;    // result of (a & ~mask) | (b & mask) goes here
+                   // 这里保存(a & ~mask) | (b & mask)的结果
+
+r = a ^ ((a ^ b) & mask);
+```
+
+这个算法比这种简单的实现(a & ~mask) | (b & mask)节省一次操作。然而如果掩码是一个常量，那么这两种算法实际上都差不多。
+
+2006年2月9日，Ron Jeffery将这个算法发给我了。
+
+### 统计二进制位中1的个数(普通实现)
+
+```c
+unsigned int v; // count the number of bits set in v
+                // 计算变量v的二进制中1的个数
+unsigned int c; // c accumulates the total bits set in v
+                // 保存计算的结果
+
+for (c = 0; v; v >>= 1)
+{
+  c += v & 1;
+}
+```
+
+这个简单算法对于每一位都需要一次操作，直到结束。所以对于32位字长，且只有最高位为1时（即最坏情况），这个算法会操作32次。
+
+### 统计二进制位中1的个数(查表法)
+
+```c
+static const unsigned char BitsSetTable256[256] =
+{
+#   define B2(n) n,     n+1,     n+1,     n+2
+#   define B4(n) B2(n), B2(n+1), B2(n+1), B2(n+2)
+#   define B6(n) B4(n), B4(n+1), B4(n+1), B4(n+2)
+    B6(0), B6(1), B6(1), B6(2)
+};
+
+unsigned int v; // count the number of bits set in v
+                // 计算变量v的二进制中1的个数
+unsigned int c; // c accumulates the total bits set in v
+                // 保存计算的结果
+// Option 1:
+// 第一种：
+c = BitsSetTable256[v & 0xff] +
+    BitsSetTable256[(v >> 8) & 0xff] +
+    BitsSetTable256[(v >> 16) & 0xff] +
+    BitsSetTable256[v >> 24];
+
+// Option 2:
+// 第二种：
+unsigned char * p = (unsigned char *) &v;
+c = BitsSetTable256[p[0]] +
+    BitsSetTable256[p[1]] +
+    BitsSetTable256[p[2]] +
+    BitsSetTable256[p[3]];
+
+
+// To initially generate the table algorithmically:
+// 使用算法来预处理表的内容
+BitsSetTable256[0] = 0;
+for (int i = 0; i < 256; i++)
+{
+  BitsSetTable256[i] = (i & 1) + BitsSetTable256[i / 2];
+}
+```
+
+2009年7月14日，Hallvard Furuseth提出了宏压缩版本的预处理表的方法。
+
+### 统计二进制位中1的个数(Brian Kernighan方法)
+
+```c
+unsigned int v; // count the number of bits set in v
+                // 计算变量v的二进制中1的个数
+unsigned int c; // c accumulates the total bits set in v
+                // 保存计算的结果
+for (c = 0; v; c++)
+{
+  v &= v - 1; // clear the least significant bit set
+              // 清除掉从最低位到最高位数的第一个为1的位
+}
+```
+
+Brian Kernighan的方法运算次数取决于二进制位中1的个数。所以如果一个32位字长的数，只有最高位是1，那么这个算法只会执行1次。
+
+1988年，发布于《C程序设计语言》（第二版），作者Brian W. Kernighan和Dennis M. Ritchie。在此书的练习2-9中提到了这个算法。
+
+2006年4月19日，Don Knuth向我指出这个算法，“是被Peter Wegner首先在CACM 3 (1960), 322发表的”。（同时也被Derrick Lehmer独立发现，并且在1964年由Beckenbach编辑发表在一本书上）
+
+### 统计14位字长，24位字长，32位字长的二进制位中1的个数(64位架构下)
+
+```c
+unsigned int v; // count the number of bits set in v
+                // 计算变量v的二进制中1的个数
+unsigned int c; // c accumulates the total bits set in v
+                // 保存计算的结果
+
+// option 1, for at most 14-bit values in v:
+// 第一种情况，只计算统计变量v中的14位
+c = (v * 0x200040008001ULL & 0x111111111111111ULL) % 0xf;
+
+// option 2, for at most 24-bit values in v:
+// 第二种情况，只计算统计变量v中的24位
+c =  ((v & 0xfff) * 0x1001001001001ULL & 0x84210842108421ULL) % 0x1f;
+c += (((v & 0xfff000) >> 12) * 0x1001001001001ULL & 0x84210842108421ULL)
+     % 0x1f;
+
+// option 3, for at most 32-bit values in v:
+// 第三种情况，只计算统计变量v中的32位
+c =  ((v & 0xfff) * 0x1001001001001ULL & 0x84210842108421ULL) % 0x1f;
+c += (((v & 0xfff000) >> 12) * 0x1001001001001ULL & 0x84210842108421ULL) %
+     0x1f;
+c += ((v >> 24) * 0x1001001001001ULL & 0x84210842108421ULL) % 0x1f;
+```
+
+这个算法需要在支持快速模除的64位CPU上才能达到高性能的效果。第一种情况只需要3次操作，第二种需要10次，第三种需要15次。
+
+Rich Schroeppel最初想出了一个和第一种类似的9位长版本，见Programming Hacks的这一章节[Beeler, M., Gosper, R. W., and Schroeppel, R. HAKMEM. MIT AI Memo 239, Feb. 29, 1972](http://www.inwap.com/pdp10/hbaker/hakmem/hakmem.html)。他的想法是收此启发，并最终由Sean Anderson完成设计。
+
+2005年5月3日，Randal E.Byrant提了几个bug修复补丁。
+
+2007年2月1日，Bruce Dawson对原来的12位版本做了一些调整，将其变成了兼容性更好的14位版本，并且保持操作数不变。
+
+### 统计二进制位中1的个数(并行计算的方法)
+
+```c
+unsigned int v; // count the number of bits set in v
+                // 计算变量v的二进制中1的个数
+unsigned int c; // c accumulates the total bits set in v
+                // 保存计算的结果
+static const int S[] = {1, 2, 4, 8, 16}; // Magic Binary Numbers
+static const int B[] = {0x55555555, 0x33333333, 0x0F0F0F0F, 0x00FF00FF, 0x0000FFFF};
+
+c = v - ((v >> 1) & B[0]);
+c = ((c >> S[1]) & B[1]) + (c & B[1]);
+c = ((c >> S[2]) + c) & B[2];
+c = ((c >> S[3]) + c) & B[3];
+c = ((c >> S[4]) + c) & B[4];              
+```
+
+B数组，以及其二进制的形式如下：
+
+```c
+B[0] = 0x55555555 = 01010101 01010101 01010101 01010101
+B[1] = 0x33333333 = 00110011 00110011 00110011 00110011
+B[2] = 0x0F0F0F0F = 00001111 00001111 00001111 00001111
+B[3] = 0x00FF00FF = 00000000 11111111 00000000 11111111
+B[4] = 0x0000FFFF = 00000000 00000000 11111111 11111111
+```
+
+通过添加两个幻数数组B和S，就能够扩展这个方法，以适应位长更多的整数类型。如果有k位的话，那么我们只需要把数组S和B扩展到ceil(lg(k))个元素就好，同时添加对应数量的计算c的表达式。对于32位长度的v来说，一共需要16次操作。
+
+然而对于计算32位整型数来说，最好的计算方法下面这种：
+
+```c
+v = v - ((v >> 1) & 0x55555555);                    // reuse input as temporary
+                                                    // 将输入变量作为临时变量重复使用
+v = (v & 0x33333333) + ((v >> 2) & 0x33333333);     // temp
+                                                    // 临时变量
+c = ((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24; // count
+                                                    // 计算结果
+```
+
+这种计算方法只需要12次操作，虽然和上面查表的方法差不多，但是却能够节省了内存和避免了潜在的缓存未命中而导致的额外操作。这是在并行计算方法和之前使用乘法的那种方法（在64位架构下，二进制位中1的个数那一小节中）之间的结合，然而这个方法却不需要64位架构的指令。每个比特中的1统计可以并行的计算，最终的结果计算是通过乘以0x1010101后右移24位来得出的。
+
+这个方法还有一个推广，可以计算长度多达128位的整型数(128位整型的数据类型使用T来代替)，如下：
+
+```c
+v = v - ((v >> 1) & (T)~(T)0/3);                           // temp
+v = (v & (T)~(T)0/15*3) + ((v >> 2) & (T)~(T)0/15*3);      // temp
+v = (v + (v >> 4)) & (T)~(T)0/255*15;                      // temp
+c = (T)(v * ((T)~(T)0/255)) >> (sizeof(T) - 1) * CHAR_BIT; // count
+```
+
+在[Ian Ashdown's nice newsgroup post](http://groups.google.com/groups?q=reverse+bits&amp;num=100&amp;hl=en&amp;group=comp.graphics.algorithms&amp;imgsafe=off&amp;safe=off&amp;rnum=2&amp;ic=1&amp;selm=4fulhm%248dn%40atlas.uniserve.com)还可以看到更多关于计算二进制位中1个数（也被人称为sideways addition）的相关信息。
+
+2005年12月14日，Charlie Gordon提出了一种方法，可以让纯平行计算的版本减少一次操作。2005年12月30日，Don Clugston在此之上又优化掉了3次操作。
+
+2006年1月8日，Eric Cole指出了我在按照Don的建议修改本文时留下的一处显示错误。
+
+2006年11月17日，Eric提出了最好计算方法的可变位长推广方案。
+
+2007年4月5日，Al Williams发现我在第一个方法中留下了一行无用的代码。
+
+### 统计从最高位到指定的某位之间的二进制位1的个数
+
+这个方法是用来计算某一位的rank，意思是统计从最高位到指定的某位之间二进制位1的个数
+
+```c
+uint64_t v; // Compute the rank (bits set) in v from the MSB（最高位） to pos.
+            // 计算v中从第pos位到最高位的rank(二进制位1的个数)
+unsigned int pos; // Bit position to count bits upto.
+                  // 指定某一位，向最高位统计
+uint64_t r; // Resulting rank of bit at pos goes here.
+            // 保存统计的结果
+
+// Shift out bits after given position.
+// 将其余的位右移出去
+r = v >> (sizeof(v) * CHAR_BIT - pos);
+// Count set bits in parallel.
+// 并行地统计1的个数
+// r = (r & 0x5555...) + ((r >> 1) & 0x5555...);
+r = r - ((r >> 1) & ~0UL/3);
+// r = (r & 0x3333...) + ((r >> 2) & 0x3333...);
+r = (r & ~0UL/5) + ((r >> 2) & ~0UL/5);
+// r = (r & 0x0f0f...) + ((r >> 4) & 0x0f0f...);
+r = (r + (r >> 4)) & ~0UL/17;
+// r = r % 255;
+r = (r * (~0UL/255)) >> ((sizeof(v) - 1) * CHAR_BIT);
+```
+
+2009年11月21日，Juha Järvi将这个算法发给了我，这个算法是下一个算法（给定从某位到最高位1的个数，推算出该位的位置）的逆运算。
+
+### 给定从某位到最高位1的个数，推算该位的位置
+
+接下来这份64位的代码可以选取出从左到右第r个二进制1的位置。也就是说，如果我们从最高位往右，统计二进制位为1的个数，直到达到了预期的rank（译者：解释见上一条），那么我们停下的位置就是答案。如果超出了最低位还没有算出结果，那么会返回64。这段代码可以改编出32位版本，也可以从最右边开始统计。
+
+```c
+// Do a normal parallel bit count for a 64-bit integer,      
+// 并行地统计出二进制1的个数               
+ // but store all intermediate steps.       
+ // 保存所有的中间结果                                 
+ // a = (v & 0x5555...) + ((v >> 1) & 0x5555...);
+ a =  v - ((v >> 1) & ~0UL/3);
+ // b = (a & 0x3333...) + ((a >> 2) & 0x3333...);
+ b = (a & ~0UL/5) + ((a >> 2) & ~0UL/5);
+ // c = (b & 0x0f0f...) + ((b >> 4) & 0x0f0f...);
+ c = (b + (b >> 4)) & ~0UL/0x11;
+ // d = (c & 0x00ff...) + ((c >> 8) & 0x00ff...);
+ d = (c + (c >> 8)) & ~0UL/0x101;
+ t = (d >> 32) + (d >> 48);
+ // Now do branchless select!   
+ // 这里进行无分支指令的条件选取                                             
+ s  = 64;
+ // if (r > t) {s -= 32; r -= t;}
+ s -= ((t - r) & 256) >> 3; r -= (t & ((t - r) >> 8));
+ t  = (d >> (s - 16)) & 0xff;
+ // if (r > t) {s -= 16; r -= t;}
+ s -= ((t - r) & 256) >> 4; r -= (t & ((t - r) >> 8));
+ t  = (c >> (s - 8)) & 0xf;
+ // if (r > t) {s -= 8; r -= t;}
+ s -= ((t - r) & 256) >> 5; r -= (t & ((t - r) >> 8));
+ t  = (b >> (s - 4)) & 0x7;
+ // if (r > t) {s -= 4; r -= t;}
+ s -= ((t - r) & 256) >> 6; r -= (t & ((t - r) >> 8));
+ t  = (a >> (s - 2)) & 0x3;
+ // if (r > t) {s -= 2; r -= t;}
+ s -= ((t - r) & 256) >> 7; r -= (t & ((t - r) >> 8));
+ t  = (v >> (s - 1)) & 0x1;
+ // if (r > t) s--;
+ s -= ((t - r) & 256) >> 8;
+ s = 65 - s;
+```
+
+如果在你的CPU上分支指令速度足够快，可以考虑将使用被注释掉的那些if语句，将对应的其它语句注释掉。
+
+2009年11月21日，Juha Järvi将这个发给了我。
+
+### 计算奇偶校验位（普通实现）
+
+```c
+unsigned int v;       // word value to compute the parity of
+                      // 需要计算的值保存在变量v中
+bool parity = false;  // parity will be the parity of v
+                      // 变量parity保存v的奇偶校验位
+while (v)
+{
+  parity = !parity;
+  v = v & (v - 1);
+}
+```
+
+上面这段代码实现使用了类似Brian Kernigan的统计二进制位中1个数的方法。二进制中有多少个1，这个算法就会计算多少次。
+
+### 计算奇偶校验位（查表法）
+
+```c
+static const bool ParityTable256[256] = 
+{
+#   define P2(n) n, n^1, n^1, n
+#   define P4(n) P2(n), P2(n^1), P2(n^1), P2(n)
+#   define P6(n) P4(n), P4(n^1), P4(n^1), P4(n)
+    P6(0), P6(1), P6(1), P6(0)
+};
+
+unsigned char b;  // byte value to compute the parity of
+                  // 需要计算的值保存在变量b中
+bool parity = ParityTable256[b];
+
+// OR, for 32-bit words:
+// 或者，32位字长下
+unsigned int v;
+v ^= v >> 16;
+v ^= v >> 8;
+bool parity = ParityTable256[v & 0xff];
+
+// Variation:
+// 变种
+unsigned char * p = (unsigned char *) &v;
+parity = ParityTable256[p[0] ^ p[1] ^ p[2] ^ p[3]];
+```
+
+2005年5月3日，Randal E.Bryant提出了使用变量p的那个变种版本。
+
+2005年9月27日，Bruce Rawles发现了表中有一处变量名拼写错误，并获得了10美刀的奖励。
+
+2006年10月9日，Fabrice Bellard提出了32位字长的变种，这个变种只需要查表一次；最初的版本需要4次查表（每个字节一次），明显更慢一些。
+
+2009年7月14日，Hallvard Furuseth提出用宏来精简表的长度。
+
+### 计算单个字节的奇偶校验位（使用64位的乘法和模除）
+
+```c
+unsigned char b;  // byte value to compute the parity of
+                  // 需要计算的值保存在变量b中
+bool parity =
+  (((b * 0x0101010101010101ULL) & 0x8040201008040201ULL) % 0x1FF) & 1;
+```
+
+这个方法只需要4次操作，然而只能计算单个字节。
+
+### 计算单个字的奇偶校验位（使用乘法）
+
+这个方法计算32位字长的值在使用乘法的情况下，只需要8次操作。
+
+```c
+unsigned int v; // 32-bit word
+                // 32位长度的字
+v ^= v >> 1;
+v ^= v >> 2;
+v = (v & 0x11111111U) * 0x11111111U;
+return (v >> 28) & 1;
+```
+
+对于64位，仍只需要8次操作。
+
+```c
+unsigned long long v; // 64-bit word
+                      // 64位长度的字
+
+v ^= v >> 1;
+v ^= v >> 2;
+v = (v & 0x1111111111111111UL) * 0x1111111111111111UL;
+return (v >> 60) & 1;
+```
+
+2007年9月2日，Andrew Shapira想出的这个算法，并发给了我。
+
+### 计算奇偶校验位（并行计算）
+
+```c
+unsigned int v;  // word value to compute the parity of
+                 // 需要计算奇偶校验位的字长度的值
+v ^= v >> 16;
+v ^= v >> 8;
+v ^= v >> 4;
+v &= 0xf;
+return (0x6996 >> v) & 1;
+```
+
+这个方法需要9次运算，可以工作在32位字长的环境下。如果是只需要对字节进行计算，那么可以把“unsigned int v;”的下两行去掉，这样可以把操作数优化到5次。这个方法先是将这个32位值的分成8个半字节，通过右移和异或将v压缩到v的最低的半字节中。然后将二进制位0110 1001 1001 0110(十六位表示为0x6996)的数值右移，右移的位数是刚刚计算出来的v的最低半字节的值。这个幻数就像是一个16位的小型奇偶校验位的表，通过v的最低半字节的值可以查到v的奇偶校验位。最终结果存放在最低位中，代码最后通过掩码的方式计算出了结果并返回。
+
+2002年12月15日，感谢Mathew Hendry提出了右移查表的想法。相比只使用右移和异或的方法，这个优化可以减少掉节省两次操作。
+
+### 交换数值（使用加法和减法）
+
+```c
+#define SWAP(a, b) ((&(a) == &(b)) || \
+                    (((a) -= (b)), ((b) += (a)), ((a) = (b) - (a))))
+```
+
+这个交换的方法不使用临时变量。一开始有一个检查变量a和变量b在内存中的位置是否相同，如果你能确保这种情况不会发生，那么这个检查可以去掉。（编译器可能也会把这个给优化掉）如果程序有溢出时抛异常的机制，那么传入无符号型的值就不会抛异常了。待会儿会介绍一个使用异或的方法，这个方法在某些机器上可能会稍微快一些。注意这个方法不能应用在浮点数的交换上（除非你就是想使用他们的整数形式）。
+
+### 交换数值（使用异或）
+
+```c
+#define SWAP(a, b) (((a) ^= (b)), ((b) ^= (a)), ((a) ^= (b)))
+```
+
+2005年1月20日，Iain A. Fleming指出如果我们交换的数值在内存中的地址相同，这个宏不会起作用，比如SWAP(a[i], a[j])，i == j。所以，如果那种情况可能发生，可以考虑增加一个判断，就像这样 (((a) == (b)) || (((a) ^= (b)), ((b) ^= (a)), ((a) ^= (b))))。
+
+2009年7月14日，Hallvard Furuseth建议，在有些机器上可能这条语句会更快一点(((a) ^ (b)) && ((b) ^= (a) ^= (b), (a) ^= (b)))，因为(a) ^ (b)这条表达式被再利用了（译者注：意思应该是省去了重复计算的步骤）。
+
+### 指定范围，交换数值的二进制位（使用异或）
+
+```c
+unsigned int i, j; // positions of bit sequences to swap
+                   // 指定交换的位置
+unsigned int n;    // number of consecutive bits in each sequence
+                   // 区间的长度
+unsigned int b;    // bits to swap reside in b
+                   // 变量b中的二进制位需要交换
+unsigned int r;    // bit-swapped result goes here
+                   // 变量r存放位交换后的结果
+
+unsigned int x = ((b >> i) ^ (b >> j)) & ((1U << n) - 1); // XOR temporary
+                                                          // 异或操作的临时变量
+r = b ^ ((x << i) | (x << j));
+```
+
+举一个 指定二进制位范围来交换数值 的例子，我们有b = 00101111（二进制形式），希望交换的位长度为n = 3，起始点是i = 1（从右往左数第2个位）的连续3个位，以及起点为j = 5的连续3个位；那么结果就会是r = 11100011(二进制)。
+
+这个交换数值的技巧很像之前那个通用的异或交换的技巧，区别于这个技巧是用来操作特定的某些位。变量x中保存我们想要交换的两段二进制位值异或后的结果，然后用x与原来的值进行异或，便可以达到交换的效果。当然如果指定的范围溢出了的话，计算结果是未定义的。
+
+2009年7月14日，Hallvard Furuseth建议我将1 << n 改成 1U << n，因为使用无符号整型可以防止移位操作覆盖掉了符号位。
+
+### 位的反转（朴素方法）
+
+```c
+unsigned int v;     // input bits to be reversed
+                    // 需要翻转的数值输入保存在这里
+unsigned int r = v; // r will be reversed bits of v; first get LSB of v
+                    // 将v反转后的结果保存在变量r中；首先会算出v的最低有效位（注：推测此处的LSB是指Least Significant Bit，故翻译为最低有效位，不太确定）
+int s = sizeof(v) * CHAR_BIT - 1; // extra shift needed at end
+                                  // 最终需要额外左移的长度
+
+for (v >>= 1; v; v >>= 1)
+{   
+  r <<= 1;
+  r |= v & 1;
+  s--;
+}
+r <<= s; // shift when v's highest bits are zero
+         // v的高位可能存在0，所以这里需要左移
+```
+
+2004年10月15日，Michael Hoisie指出了一个最初版本的bug。
+
+2005年5月3日，Randal E. Bryant提议去除掉一处多余的操作。
+
+2005年5月18日，Behdad Esfabod指出一个改动，可以让少循环一次。
+
+2007年2月6日，Liyong Zhou给出了一个更好的版本，如果v不是0的话才进入循环，而不是循环遍历完所有位，这样可以早一些退出循环。
+
+### 位的反转（查表法）
+
+```c
+static const unsigned char BitReverseTable256[256] =
+{
+#   define R2(n)     n,     n + 2*64,     n + 1*64,     n + 3*64
+#   define R4(n) R2(n), R2(n + 2*16), R2(n + 1*16), R2(n + 3*16)
+#   define R6(n) R4(n), R4(n + 2*4 ), R4(n + 1*4 ), R4(n + 3*4 )
+    R6(0), R6(2), R6(1), R6(3)
+};
+
+unsigned int v; // reverse 32-bit value, 8 bits at time
+                // 需要反转的32位值，每次反转8位
+unsigned int c; // c will get v reversed
+                // 变量c结果保存v反转后的值
+
+// Option 1:
+c = (BitReverseTable256[v & 0xff] << 24) |
+    (BitReverseTable256[(v >> 8) & 0xff] << 16) |
+    (BitReverseTable256[(v >> 16) & 0xff] << 8) |
+    (BitReverseTable256[(v >> 24) & 0xff]);
+
+// Option 2:
+unsigned char * p = (unsigned char *) &v;
+unsigned char * q = (unsigned char *) &c;
+q[3] = BitReverseTable256[p[0]];
+q[2] = BitReverseTable256[p[1]];
+q[1] = BitReverseTable256[p[2]];
+q[0] = BitReverseTable256[p[3]];
+```
+
+假定你的CPU可以轻松存取字节，那么第一个方法需要17次左右的操作，第二个需要12个。
+
+2009年7月14日，Hallvard Furuseth提供了这个宏压缩的表。
+
+### 单字节的位反转（3次操作，需要64位乘和模）
+
+```c
+unsigned char b; // reverse this (8-bit) byte
+                 // 反转这个（8位长）字节
+
+b = (b * 0x0202020202ULL & 0x010884422010ULL) % 1023;
+```
+
+乘法操作产生了5份8位长的串，保存在64位整数里。按位与操作选取出一些特定位置上（反转）的位，并按照10位一组的方式分组。乘法和按位与操作将需要的二进制位从原始的字节中提取出来，使得他们都只出现在10位长的组里。原始字节反转后的位置，正好是他们在每个10位小组里面的相对位置。最后一步，通过模除2^10 - 1，可以使64位整数的值按照每10位每10位的方式合并在一起。这个操作不会让他们溢出，所以这个模除的步骤看起来很像按位或。
+
+这个方法出自 Rich Schroeppel 的[Beeler, M., Gosper, R. W., and Schroeppel, R. HAKMEM. MIT AI Memo 239, Feb. 29, 1972](http://www.inwap.com/pdp10/hbaker/hakmem/hakmem.html)中的Programming Hacks小节。
+
+### 单字节的位反转（4次操作，需要64位乘，不需要除法）
+
+```c
+unsigned char b; // reverse this byte
+                 // 反转这个字节的二进制位
+
+b = ((b * 0x80200802ULL) & 0x0884422110ULL) * 0x0101010101ULL >> 32;
+```
+
+下图中展示了计算的每个步骤，通过a, b, c, d, e, f, g和h来表示8位长字节的每一位。仔细观察可以发现，第一个乘法产生了几份原始串的拷贝，最后一个乘法则将散落的位从第五个字节开始向右将他们合并在了一起。
+
+``````
+                                                                                        abcd efgh (-> hgfe dcba)
+*                                                      1000 0000  0010 0000  0000 1000  0000 0010 (0x80200802)
+-------------------------------------------------------------------------------------------------
+                                            0abc defg  h00a bcde  fgh0 0abc  defg h00a  bcde fgh0
+&                                           0000 1000  1000 0100  0100 0010  0010 0001  0001 0000 (0x0884422110)
+-------------------------------------------------------------------------------------------------
+                                            0000 d000  h000 0c00  0g00 00b0  00f0 000a  000e 0000
+*                                           0000 0001  0000 0001  0000 0001  0000 0001  0000 0001 (0x0101010101)
+-------------------------------------------------------------------------------------------------
+                                            0000 d000  h000 0c00  0g00 00b0  00f0 000a  000e 0000
+                                 0000 d000  h000 0c00  0g00 00b0  00f0 000a  000e 0000
+                      0000 d000  h000 0c00  0g00 00b0  00f0 000a  000e 0000
+           0000 d000  h000 0c00  0g00 00b0  00f0 000a  000e 0000
+0000 d000  h000 0c00  0g00 00b0  00f0 000a  000e 0000
+-------------------------------------------------------------------------------------------------
+0000 d000  h000 dc00  hg00 dcb0  hgf0 dcba  hgfe dcba  hgfe 0cba  0gfe 00ba  00fe 000a  000e 0000
+>> 32
+-------------------------------------------------------------------------------------------------
+                                            0000 d000  h000 dc00  hg00 dcb0  hgf0 dcba  hgfe dcba  
+&                                                                                       1111 1111
+-------------------------------------------------------------------------------------------------
+                                                                                        hgfe dcba
+``````
+
+Note that the last two steps can be combined on some processors because the registers can be accessed as bytes; just multiply so that a register stores the upper 32 bits of the result and the take the low byte. Thus, it may take only 6 operations.（译者注：这句意思不太明白）
+
+2001年7月13日，出自Sean Anderson之手。
+
+### 单字节的位反转（7次操作，不需要64位操作）
+
+```c
+b = ((b * 0x0802LU & 0x22110LU) | (b * 0x8020LU & 0x88440LU)) * 0x10101LU >> 16;
+```
+
+这个技巧借助高位溢出来消除计算中产生的无用数值，使用前要确保操作的结果保存在无符号char型变量里，以避免这个技巧失效。
+
+2001年7月13日，出自Sean Anderson之手。
+2002年1月3日，Mike Keith指出并纠正了书写错误。
+
+### N位长的串的位反转（5*lg(N)次操作，并行）
+
+```c
+unsigned int v; // 32-bit word to reverse bit order
+                // 反转32位长的字
+
+// swap odd and even bits
+// 反转奇数位和偶数位的位
+v = ((v >> 1) & 0x55555555) | ((v & 0x55555555) << 1);
+// swap consecutive pairs
+// 反转两两一组的位
+v = ((v >> 2) & 0x33333333) | ((v & 0x33333333) << 2);
+// swap nibbles ...
+// 反转半字节
+v = ((v >> 4) & 0x0F0F0F0F) | ((v & 0x0F0F0F0F) << 4);
+// swap bytes
+// 反转字节
+v = ((v >> 8) & 0x00FF00FF) | ((v & 0x00FF00FF) << 8);
+// swap 2-byte long pairs
+// 反转两字节一组的位
+v = ( v >> 16             ) | ( v               << 16);
+```
+
+下面的这个变种时间复杂度同样是O(lg(N))，然而它需要额外的操作来反转变量v。它的优点是常数在过程中计算，这样可以占用更少的内存。
+
+```c
+unsigned int s = sizeof(v) * CHAR_BIT; // bit size; must be power of 2
+                                       // 位长；必须要是2的乘幂
+unsigned int mask = ~0;         
+while ((s >>= 1) > 0)
+{
+  mask ^= (mask << s);
+  v = ((v >> s) & mask) | ((v << s) & ~mask);
+}
+```
+
+这些方法很适合用在N很大的场景下。如果你需要用在大于64位的整型数时，那么就便需要按照对应的模式添加代码；不然只会有低32位会被反转，答案也会保存在低32位下。
+
+参考1983年的Dr.Dobb日志，Binary Magic Numbers中Edwin Freed的文章可以查到更多信息。
+
+2005年9月13日，Ken Raeburn提出了第二个变种。
+
+2006年3月19日，Veldmeijer提到，第一个版本的算法的最后一行可以不用位与操作。
+
+### 手工计算模除（模数是 1<<s 时）
+
+```c
+const unsigned int n;          // numerator
+                               // 变量n为分子（被模除的数）
+const unsigned int s;
+const unsigned int d = 1U << s; // So d will be one of: 1, 2, 4, 8, 16, 32, ...
+                                // 那么变量d从小到大依次为:1, 2, 4, 8, 16, 32, ...
+unsigned int m;                // m will be n % d
+                               // m保存n%d的结果
+m = n & (d - 1);
+```
+
+这个技巧大多数程序员都会，为了保持完整性，这里还是把这个技巧放在了这里。
+
+### 手工计算模除（模数是 (1<<s)-1 时）
+
+```c
+unsigned int n;                      // numerator
+                                     // 变量n为分子（被模除的数）
+const unsigned int s;                // s > 0
+const unsigned int d = (1 << s) - 1; // so d is either 1, 3, 7, 15, 31, ...).
+                                     // 那么变量d从小到大依次为:1, 3, 7, 15, 31, ...
+unsigned int m;                      // n % d goes here.
+                                     // 保存n%d的结果
+for (m = n; n > d; n = m)
+{
+  for (m = 0; n; n >>= s)
+  {
+    m += n & d;
+  }
+}
+// Now m is a value from 0 to d, but since with modulus division
+// 此时m的值范围时0到d，但由于这里是模除（译者注：所以需要特殊处理m等于d的情况）
+// we want m to be 0 when it is d.
+// 当m的值为d时，我们希望m的值变成0
+m = m == d ? 0 : m;
+```
+
+这个用来处理 模数是比2的乘幂少1的整数 的模除技巧，最多需要 5 + (4 + 5 * ceil(N / s)) * ceil(lg(N / s)) 次操作，此处N表示被模数的有效位。也就是说，这个技巧最多需要O(N * lg(N))的时间复杂度。
+
+2001年8月15日，出自Sean Anderson之手。
+
+2004年6月17日，Sean A. Irvine纠正了我一个错误，我之前曾错误地写道“我们也可以在后面直接对m赋值，m = ((m + 1) & d) - 1;”。
+
+2005年4月25日，Michael Miller订正了代码中的一处排版显示错误。
+
+### 手工计算模除（模数是 (1<<s)-1 时，并行）
+
+```c
+// The following is for a word size of 32 bits!
+// 下面的方式适用于字长为32位的情况
+static const unsigned int M[] =
+{
+  0x00000000, 0x55555555, 0x33333333, 0xc71c71c7,  
+  0x0f0f0f0f, 0xc1f07c1f, 0x3f03f03f, 0xf01fc07f,
+  0x00ff00ff, 0x07fc01ff, 0x3ff003ff, 0xffc007ff,
+  0xff000fff, 0xfc001fff, 0xf0003fff, 0xc0007fff,
+  0x0000ffff, 0x0001ffff, 0x0003ffff, 0x0007ffff,
+  0x000fffff, 0x001fffff, 0x003fffff, 0x007fffff,
+  0x00ffffff, 0x01ffffff, 0x03ffffff, 0x07ffffff,
+  0x0fffffff, 0x1fffffff, 0x3fffffff, 0x7fffffff
+};
+
+static const unsigned int Q[][6] =
+{
+  { 0,  0,  0,  0,  0,  0}, {16,  8,  4,  2,  1,  1}, {16,  8,  4,  2,  2,  2},
+  {15,  6,  3,  3,  3,  3}, {16,  8,  4,  4,  4,  4}, {15,  5,  5,  5,  5,  5},
+  {12,  6,  6,  6 , 6,  6}, {14,  7,  7,  7,  7,  7}, {16,  8,  8,  8,  8,  8},
+  { 9,  9,  9,  9,  9,  9}, {10, 10, 10, 10, 10, 10}, {11, 11, 11, 11, 11, 11},
+  {12, 12, 12, 12, 12, 12}, {13, 13, 13, 13, 13, 13}, {14, 14, 14, 14, 14, 14},
+  {15, 15, 15, 15, 15, 15}, {16, 16, 16, 16, 16, 16}, {17, 17, 17, 17, 17, 17},
+  {18, 18, 18, 18, 18, 18}, {19, 19, 19, 19, 19, 19}, {20, 20, 20, 20, 20, 20},
+  {21, 21, 21, 21, 21, 21}, {22, 22, 22, 22, 22, 22}, {23, 23, 23, 23, 23, 23},
+  {24, 24, 24, 24, 24, 24}, {25, 25, 25, 25, 25, 25}, {26, 26, 26, 26, 26, 26},
+  {27, 27, 27, 27, 27, 27}, {28, 28, 28, 28, 28, 28}, {29, 29, 29, 29, 29, 29},
+  {30, 30, 30, 30, 30, 30}, {31, 31, 31, 31, 31, 31}
+};
+
+static const unsigned int R[][6] =
+{
+  {0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000},
+  {0x0000ffff, 0x000000ff, 0x0000000f, 0x00000003, 0x00000001, 0x00000001},
+  {0x0000ffff, 0x000000ff, 0x0000000f, 0x00000003, 0x00000003, 0x00000003},
+  {0x00007fff, 0x0000003f, 0x00000007, 0x00000007, 0x00000007, 0x00000007},
+  {0x0000ffff, 0x000000ff, 0x0000000f, 0x0000000f, 0x0000000f, 0x0000000f},
+  {0x00007fff, 0x0000001f, 0x0000001f, 0x0000001f, 0x0000001f, 0x0000001f},
+  {0x00000fff, 0x0000003f, 0x0000003f, 0x0000003f, 0x0000003f, 0x0000003f},
+  {0x00003fff, 0x0000007f, 0x0000007f, 0x0000007f, 0x0000007f, 0x0000007f},
+  {0x0000ffff, 0x000000ff, 0x000000ff, 0x000000ff, 0x000000ff, 0x000000ff},
+  {0x000001ff, 0x000001ff, 0x000001ff, 0x000001ff, 0x000001ff, 0x000001ff},
+  {0x000003ff, 0x000003ff, 0x000003ff, 0x000003ff, 0x000003ff, 0x000003ff},
+  {0x000007ff, 0x000007ff, 0x000007ff, 0x000007ff, 0x000007ff, 0x000007ff},
+  {0x00000fff, 0x00000fff, 0x00000fff, 0x00000fff, 0x00000fff, 0x00000fff},
+  {0x00001fff, 0x00001fff, 0x00001fff, 0x00001fff, 0x00001fff, 0x00001fff},
+  {0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff},
+  {0x00007fff, 0x00007fff, 0x00007fff, 0x00007fff, 0x00007fff, 0x00007fff},
+  {0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff},
+  {0x0001ffff, 0x0001ffff, 0x0001ffff, 0x0001ffff, 0x0001ffff, 0x0001ffff},
+  {0x0003ffff, 0x0003ffff, 0x0003ffff, 0x0003ffff, 0x0003ffff, 0x0003ffff},
+  {0x0007ffff, 0x0007ffff, 0x0007ffff, 0x0007ffff, 0x0007ffff, 0x0007ffff},
+  {0x000fffff, 0x000fffff, 0x000fffff, 0x000fffff, 0x000fffff, 0x000fffff},
+  {0x001fffff, 0x001fffff, 0x001fffff, 0x001fffff, 0x001fffff, 0x001fffff},
+  {0x003fffff, 0x003fffff, 0x003fffff, 0x003fffff, 0x003fffff, 0x003fffff},
+  {0x007fffff, 0x007fffff, 0x007fffff, 0x007fffff, 0x007fffff, 0x007fffff},
+  {0x00ffffff, 0x00ffffff, 0x00ffffff, 0x00ffffff, 0x00ffffff, 0x00ffffff},
+  {0x01ffffff, 0x01ffffff, 0x01ffffff, 0x01ffffff, 0x01ffffff, 0x01ffffff},
+  {0x03ffffff, 0x03ffffff, 0x03ffffff, 0x03ffffff, 0x03ffffff, 0x03ffffff},
+  {0x07ffffff, 0x07ffffff, 0x07ffffff, 0x07ffffff, 0x07ffffff, 0x07ffffff},
+  {0x0fffffff, 0x0fffffff, 0x0fffffff, 0x0fffffff, 0x0fffffff, 0x0fffffff},
+  {0x1fffffff, 0x1fffffff, 0x1fffffff, 0x1fffffff, 0x1fffffff, 0x1fffffff},
+  {0x3fffffff, 0x3fffffff, 0x3fffffff, 0x3fffffff, 0x3fffffff, 0x3fffffff},
+  {0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff}
+};
+
+unsigned int n;       // numerator
+                      // 变量n为分子（被模除的数）
+const unsigned int s; // s > 0
+const unsigned int d = (1 << s) - 1; // so d is either 1, 3, 7, 15, 31, ...).
+                                     // 那么变量d从小到大依次为:1, 3, 7, 15, 31, ...
+unsigned int m;       // n % d goes here.
+                      // m保存n%d的结果
+
+m = (n & M[s]) + ((n >> s) & M[s]);
+
+for (const unsigned int * q = &Q[s][0], * r = &R[s][0]; m > d; q++, r++)
+{
+  m = (m >> *q) + (m & *r);
+}
+m = m == d ? 0 : m; // OR, less portably: m = m & -((signed)(m - d) >> s);
+```
+
+这个用来处理 模数是比2的乘幂少1的整数 的模除技巧，最多需要 O(lg(N)) 的时间复杂度，其中N是指被模除的数（如代码注释，32位整数）。操作数最多为 12 + 9 * ceil(lg(N)) 次。如果在编译期可以知道分母（除数），那么这里的表可以去掉；留下表中需要用到的数据，然后去掉循环。这个方法可以轻易地扩展到更多位。
