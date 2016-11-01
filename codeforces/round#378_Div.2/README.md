@@ -40,6 +40,8 @@ dp[i][j] = dp[i][m] + dp[m+1][j]，i <= m < j，当且仅当dp[i][m] != dp[m+1][
 
 最后dfs一下就能回溯出吃怪兽的方案。
 
+[Submission](http://codeforces.com/contest/733/submission/21937835)
+
 ## D. Kostya the Sculptor
 
 ### 解题分析
@@ -53,3 +55,5 @@ dp[i][j] = dp[i][m] + dp[m+1][j]，i <= m < j，当且仅当dp[i][m] != dp[m+1][
 由于已经排过序了，所以对于同样的c 和 b，只需要把最大的两个a加起来就可以了，其他的结果必然比这个小，可以忽略。
 
 注意，C/C++的sort，qsort函数，重写cmp函数时，注意当两个数相等时不要返回true。有的STL实现，并没有判断边界条件，会导致数组越界Runtime Error。
+
+[Submission](http://codeforces.com/contest/733/submission/21965392)
