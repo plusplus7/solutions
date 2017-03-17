@@ -1,0 +1,180 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "Name": {
+      "type": "string"
+    },
+    "Location": {
+      "type": "string"
+    },
+    "KeyVaultSku": {
+      "defaultValue": "Standard",
+      "type": "string",
+      "metadata": {
+        "description": "SKU for the vault"
+      }
+    },
+    "KeyVaultAccessPolicies": {
+      "defaultValue": [],
+      "type": "array",
+      "metadata": {
+        "description": "The access policies defined for this vault."
+      }
+    },
+    "KeyVaultTenant": {
+      "type": "string"
+    },
+    "KeyVaultEnabledForDeployment": {
+      "type": "bool",
+      "defaultValue": true
+    },
+    "KeyVaultEnabledForTemplateDeployment": {
+      "type": "bool",
+      "defaultValue": true
+    },
+    "KeyVaultEnabledForDiskEncryption": {
+      "type": "bool",
+      "defaultValue": true
+    },
+    "SQLDatabaseAdminLoginName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "SQLDatabaseAdminLoginPassword": {
+      "type": "securestring"
+    },
+    "SQLDatabaseCollation": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "SQL_Latin1_General_CP1_CI_AS"
+    },
+    "SQLDatabaseEdition": {
+      "type": "string",
+      "defaultValue": "Basic"
+    },
+    "SQLDatabaseRequestedServiceObjectiveName": {
+      "type": "string",
+      "defaultValue": "Basic",
+      "metadata": {
+        "description": "Describes the performance level for Edition"
+      }
+    },
+    "ServicePlanSkuName": {
+      "type": "string",
+      "defaultValue": "F1",
+      "metadata": {
+        "description": "Describes plan's pricing tier and capacity. Check details at https://azure.microsoft.com/en-us/pricing/details/app-service/"
+      }
+    }
+  },
+  "variables": {
+    "NameLocation": "[concat(parameters('Name'), '-', parameters('Location'))]",
+    "KeyVaultName": "[concat('KVlt-', variables('NameLocation'))]",
+    "SQLServerName": "[concat('pbf-sqlsvr-', toLower(variables('NameLocation')))]",
+    "SQLDatabaseName": "[concat('PBF-SqlDb-', variables('NameLocation'))]",
+    "WebApplicationName": "[concat('PBF-WebApp-', variables('NameLocation'))]",
+    "ServicePlanName": "[concat('PBF-SvcPln-', variables('NameLocation'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "name": "[variables('KeyVaultName')]",
+      "apiVersion": "2015-06-01",
+      "location": "[parameters('Location')]",
+      "properties": {
+        "enabledForDeployment": "[parameters('KeyVaultEnabledForDeployment')]",
+        "enabledForTemplateDeployment": "[parameters('KeyVaultEnabledForTemplateDeployment')]",
+        "enabledForDiskEncryption": "[parameters('KeyVaultEnabledForDiskEncryption')]",
+        "accessPolicies": "[parameters('KeyVaultAccessPolicies')]",
+        "tenantId": "[parameters('KeyVaultTenant')]",
+        "sku": {
+          "name": "[parameters('KeyVaultSku')]",
+          "family": "A"
+        }
+      }
+    },
+    {
+      "name": "[variables('SQLServerName')]",
+      "type": "Microsoft.Sql/servers",
+      "location": "[parameters('Location')]",
+      "apiVersion": "2014-04-01-preview",
+      "dependsOn": [],
+      "tags": {
+        "displayName": "[variables('SQLServerName')]"
+      },
+      "properties": {
+        "administratorLogin": "[parameters('SQLDatabaseAdminLoginName')]",
+        "administratorLoginPassword": "[parameters('SQLDatabaseAdminLoginPassword')]"
+      },
+      "resources": [
+        {
+          "name": "AllowAllWindowsAzureIps",
+          "type": "firewallrules",
+          "location": "[parameters('Location')]",
+          "apiVersion": "2014-04-01-preview",
+          "dependsOn": [
+            "[resourceId('Microsoft.Sql/servers', variables('SQLServerName'))]"
+          ],
+          "properties": {
+            "startIpAddress": "0.0.0.0",
+            "endIpAddress": "0.0.0.0"
+          }
+        },
+        {
+          "name": "[variables('SQLDatabaseName')]",
+          "type": "databases",
+          "location": "[parameters('Location')]",
+          "apiVersion": "2014-04-01-preview",
+          "dependsOn": [
+            "[resourceId('Microsoft.Sql/servers', variables('SQLServerName'))]"
+          ],
+          "tags": {
+            "displayName": "SQLDatabase"
+          },
+          "properties": {
+            "collation": "[parameters('SQLDatabaseCollation')]",
+            "edition": "[parameters('SQLDatabaseEdition')]",
+            "maxSizeBytes": "1073741824",
+            "requestedServiceObjectiveName": "[parameters('SQLDatabaseRequestedServiceObjectiveName')]"
+          }
+        }
+      ]
+    },
+    {
+      "name": "[variables('ServicePlanName')]",
+      "type": "Microsoft.Web/serverfarms",
+      "location": "[parameters('Location')]",
+      "apiVersion": "2015-08-01",
+      "sku": {
+        "name": "[parameters('ServicePlanSkuName')]"
+      },
+      "dependsOn": [],
+      "tags": {
+        "displayName": "ServicePlan"
+      },
+      "properties": {
+        "name": "[variables('ServicePlanName')]",
+        "numberOfWorkers": 1
+      }
+    },
+    {
+      "name": "[variables('WebApplicationName')]",
+      "type": "Microsoft.Web/sites",
+      "location": "[parameters('Location')]",
+      "apiVersion": "2015-08-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('ServicePlanName'))]"
+      ],
+      "tags": {
+        "[concat('hidden-related:', resourceId('Microsoft.Web/serverfarms', variables('ServicePlanName')))]": "Resource",
+        "displayName": "[variables('WebApplicationName')]"
+      },
+      "properties": {
+        "name": "[variables('WebApplicationName')]",
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('ServicePlanName'))]"
+      }
+    }
+  ],
+  "outputs": {}
+}
