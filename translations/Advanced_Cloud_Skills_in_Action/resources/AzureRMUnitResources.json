@@ -8,35 +8,6 @@
     "Location": {
       "type": "string"
     },
-    "KeyVaultSku": {
-      "defaultValue": "Standard",
-      "type": "string",
-      "metadata": {
-        "description": "SKU for the vault"
-      }
-    },
-    "KeyVaultAccessPolicies": {
-      "defaultValue": [],
-      "type": "array",
-      "metadata": {
-        "description": "The access policies defined for this vault."
-      }
-    },
-    "KeyVaultTenant": {
-      "type": "string"
-    },
-    "KeyVaultEnabledForDeployment": {
-      "type": "bool",
-      "defaultValue": true
-    },
-    "KeyVaultEnabledForTemplateDeployment": {
-      "type": "bool",
-      "defaultValue": true
-    },
-    "KeyVaultEnabledForDiskEncryption": {
-      "type": "bool",
-      "defaultValue": true
-    },
     "SQLDatabaseAdminLoginName": {
       "type": "string",
       "minLength": 1
@@ -70,30 +41,12 @@
   },
   "variables": {
     "NameLocation": "[concat(parameters('Name'), '-', parameters('Location'))]",
-    "KeyVaultName": "[concat('KVlt-', variables('NameLocation'))]",
     "SQLServerName": "[concat('pbf-sqlsvr-', toLower(variables('NameLocation')))]",
     "SQLDatabaseName": "[concat('PBF-SqlDb-', variables('NameLocation'))]",
     "WebApplicationName": "[concat('PBF-WebApp-', variables('NameLocation'))]",
     "ServicePlanName": "[concat('PBF-SvcPln-', variables('NameLocation'))]"
   },
   "resources": [
-    {
-      "type": "Microsoft.KeyVault/vaults",
-      "name": "[variables('KeyVaultName')]",
-      "apiVersion": "2015-06-01",
-      "location": "[parameters('Location')]",
-      "properties": {
-        "enabledForDeployment": "[parameters('KeyVaultEnabledForDeployment')]",
-        "enabledForTemplateDeployment": "[parameters('KeyVaultEnabledForTemplateDeployment')]",
-        "enabledForDiskEncryption": "[parameters('KeyVaultEnabledForDiskEncryption')]",
-        "accessPolicies": "[parameters('KeyVaultAccessPolicies')]",
-        "tenantId": "[parameters('KeyVaultTenant')]",
-        "sku": {
-          "name": "[parameters('KeyVaultSku')]",
-          "family": "A"
-        }
-      }
-    },
     {
       "name": "[variables('SQLServerName')]",
       "type": "Microsoft.Sql/servers",
