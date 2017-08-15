@@ -57,7 +57,7 @@ int main()
 
         
     }
-    if (r1 + r2 + r4 < rr1)
+    if (r1 + r2 + r4*2 < rr1)
     {
         cout << "NO" << endl;
     }
