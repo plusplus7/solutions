@@ -1,41 +1,34 @@
 #include <iostream>
-#include <string>
+
 using namespace std;
 
-int no(string a) {
-    if (a[0] == 'm') {
-        return 0;
+int solve(int t1, int t2) {
+    int c = 0, ans = 0;
+    while (t1 != 0 || t2 != 0) {
+        int l1 = t1%10, l2 = t2%10;
+        if (l1 + l2 + c >= 10) {
+            ans ++;
+        }
+        c = (l1+l2+c)/10;
+        t1/=10;
+        t2/=10;
     }
-    if (a[0] == 't' && a[1] == 'u') {
-        return 1;
-    }
-    if (a[0] == 'w') {
-        return 2;
-    }
-    if (a[0] == 't' && a[1] == 'h') {
-        return 3;
-    }
-    if (a[0] == 'f') {
-        return 4;
-    }
-    if (a[0] == 's' && a[1] == 'a') {
-        return 5;
-    }
-    if (a[0] == 's' && a[1] == 'u') {
-        return 6;
-    }
-    return 9999;
+    return ans;
 }
 
 int main() {
-    string a, b;
-    cin >> a >> b;
-    int ia = no(a);
-    int ib = no(b);
-    if (ia  == ib || (ia + 2)%7 == ib || (ia + 3) % 7 == ib) {
-        cout << "YES" << endl;;
-    } else {
-        cout << "NO" << endl;
+    int t1, t2;
+    while (true) {
+        cin >> t1 >> t2;
+        if (t1 == 0 && t2 == 0) {
+            break;
+        }
+        int ans = solve(t1, t2);
+        if (ans == 0) {
+            cout << "No carry operation." << endl;
+        } else {
+            cout << ans << " " << "carry operation" << (ans <= 1 ? "." : "s.") << endl; 
+        }
     }
     return 0;
 }

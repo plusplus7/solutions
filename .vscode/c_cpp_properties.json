@@ -1,0 +1,35 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "type": "cppdbg",
+            "intelliSenseMode": "clang-x64",
+            "includePath": [
+                "${workspaceRoot}",
+                "F:/Program Files/CodeBlocks/MinGW/lib/gcc/mingw32/4.4.1/include/c++",
+                "F:/Program Files/CodeBlocks/MinGW/lib/gcc/mingw32/4.4.1/include/c++/mingw32",
+                "F:/Program Files/CodeBlocks/MinGW/lib/gcc/mingw32/4.4.1/include/c++/backward",
+                "F:/Program Files/CodeBlocks/MinGW/lib/gcc/mingw32/4.4.1/include",
+                "F:/Program Files/CodeBlocks/MinGW/include",
+                "F:/Program Files/CodeBlocks/MinGW/lib/gcc/mingw32/4.4.1/include-fixed"
+            ],
+            "program": "${workspaceRoot}/${file}.exe",
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "__GNUC__=6",
+                "__cdecl=__attribute__((__cdecl__))"
+            ],
+            "browse": {
+                "path": [
+                    "F:/Program Files/CodeBlocks/MinGW/lib/gcc/mingw32/4.4.1/include",
+                    "F:/Program Files/CodeBlocks/MinGW/lib/gcc/mingw32/4.4.1/include-fixed",
+                    "F:/Program Files/CodeBlocks/include/*"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            }
+        }
+    ],
+    "version": 3
+}
