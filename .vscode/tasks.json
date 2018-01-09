@@ -2,13 +2,15 @@
     "version": "0.1.0",
     "tasks": [
         {
+            "echoCommand": true,
             "taskName": "compileCpp",
             "command": "F:\\Program Files\\CodeBlocks\\MinGW\\bin\\g++.exe",
             "args": [
                 "-g",
                 "${file}",
                 "-o",
-                "${file}.exe"
+                "${file}.exe",
+                "-Wall",
             ],
             "problemMatcher": {
                 "owner": "cpp",
