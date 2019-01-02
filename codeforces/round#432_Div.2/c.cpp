@@ -1,88 +1,82 @@
-#include <bits/stdc++.h>
+#include <iostream>
+#include <string>
+#include<stdlib.h>
+#include <sstream>
 using namespace std;
-const double PI = 3.1415926;
-struct point5d {
-    double x[5];
-};
-
-int n;
-point5d p[1005];
-
-double mul(point5d a, point5d b) {
-    double result = 0.0f;
-    for (int i=0; i<5; i++) {
-        result += a.x[i]*b.x[i];
-    }
-    return result;
-}
-double angle(point5d a, point5d b)
+class stack
 {
-    return acos(mul(a, b) / (sqrt(mul(a, a)) * sqrt(mul(b, b))) );
-}
-
-point5d vector5d(point5d a, point5d b) {
-    point5d result;
-    for (int i=0; i<5; i++) {
-        result.x[i] = b.x[i]-a.x[i];
-    }
-    return result;
-}
-
-int main() {
-    point5d zero;
-    for (int i=0; i<5; i++) {
-        zero.x[i] = 0.0f;
-    }
-
-    scanf("%d", &n);
-    for (int i=0; i<n; i++) {
-        for (int j=0; j<5; j++) {
-            scanf("%lf", &(p[i].x[j]));
-        }
-    }
-
-    vector<int> ans;
-    ans.clear();
-    for (int i=0; i<n; i++) {
-        double max1 = -1.0;
-        double max2 = -1.0;
-        point5d a0 = vector5d(p[i], zero);
-        vector<double> angles;
-        angles.clear();
-        for (int j=0; j<n; j++) {
-            if (i == j) {
-                continue;
-            }
-
-            point5d ab = vector5d(p[i], p[j]);
-
-            angles.push_back(angle(a0, ab));
-        }
-        sort(angles.begin(), angles.end());
-
-        int la = angles.size();
-        int j;
-        for (j = 0; j < la; j++)
-        {
-            int s1 = lower_bound(angles.begin(), angles.end(), PI / 2.0 - angles[j]) - angles.begin();
-            if (s1 == la)
-            {
-                break;
-            }
-            int s2 = upper_bound(angles.begin(), angles.end(), PI * 1.5 - angles[j]) - angles.begin();
-            if (s2 == s1 + 1 && s1 == j)
-            {
-                break;
-            }
-        }
-        if (j == la)
-        {
-            ans.push_back(i+1);
-        }
-    }
-    printf("%d\n", ans.size());
-    for ( int i=0; i<ans.size(); i++){
-        printf("%d\n", ans[i]);
-    }
-
+private:
+	int arr[500];
+	int counter = -1;
+public:
+	void push(int i)
+	{
+		counter++;
+		arr[counter] = i;
+	}
+	void query()
+	{
+		if (counter == -1)
+		{
+			cout << "this is empty!"<<endl;
+		}
+		else
+		{
+			for (int i = counter; i > -1; i--)
+			{
+				cout << arr[i] << endl;
+			}
+			counter = -1;
+		}
+	}
+	void pop()
+	{
+		if (counter == -1)
+		{
+			cout << "this is empty!" << endl;
+		}
+		else
+		{
+			cout << arr[counter]<<endl;
+			counter--;
+		}
+	}
+	void init()
+	{
+		for (int i = 0; i < 500; i++)
+		{
+			arr[i] = 0;
+		}
+	}
+};
+int main()
+{
+	stack s;
+	int t;
+	int counter = 0, num = 0;
+	string a;
+	s.init();
+	cin >> t;
+	while (counter <= t)
+	{
+		getline(cin,a);
+		string aa;
+		if (a.find("push") != -1)
+		{
+			stringstream ss;
+			aa = a.substr(a.find(" ") + 1, a.size() - 1);
+			ss << aa;
+			ss >> num;
+			s.push(num);
+		}
+		if (a.find("pop") != -1)
+		{
+			s.pop();
+		}
+		if (a.find("query") != -1)
+		{
+			s.query();
+		}
+		counter++;
+	}
 }
