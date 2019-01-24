@@ -1,5 +1,11 @@
+# blog
+**/node_modules/*
+**/public/*
+**/package-lock.json
+
+# c & cpp
+*.exe
+*.o
 a.out
 in.txt 
 
-*.exe
-*.o
