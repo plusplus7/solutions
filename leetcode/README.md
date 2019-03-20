@@ -1,7 +1,5 @@
 # My Solutions to LeetCode
 
-当前进度：100/153
-
 ### [Find Minimum in Rotated Sorted Array II][-2]
 
 二分，寻找轮换排序数组的最小元素，可能有相同元素
