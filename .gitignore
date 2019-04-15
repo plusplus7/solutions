@@ -8,4 +8,6 @@
 *.o
 a.out
 in.txt 
+*.ipch
+*.bin
 
