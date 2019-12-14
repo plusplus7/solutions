@@ -1,0 +1,21 @@
+{
+  "name": "demo2",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "main": "set NODE_ENV=production && webpack --config webpack.config.js --progress",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "source-map-loader": "^0.2.4",
+    "ts-loader": "^5.4.5",
+    "ts-shader-loader": "^1.0.6",
+    "tslint-loader": "^3.5.4",
+    "typescript": "^3.7.3",
+    "webpack": "^4.41.2",
+    "webpack-cli": "^3.3.10",
+    "webpack-glsl-loader": "^1.0.1"
+  }
+}
