@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>plusplus7 studio</title>
+ <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+    integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">-->
+</head>
+<style>
+  .top {
+    display: block;
+    width: 100%;
+    height: 300px;
+    background-color: #fafafa;
+      position: absolute;
+    text-align: center;
+    padding: 70px 0;
+  }
+
+    
+  @keyframes hrline-grow {
+    0%{ width: 5%; }
+    25%{ width: 0.5%; }
+    100%{ width: 20%; }
+  }
+  @-webkit-keyframes hrline-grow {
+    0%{ width: 5%; }
+    25%{ width: 0.5%; }
+    100%{ width: 20%; }
+  }
+  @-ms-keyframes hrline-grow {
+    0%{ width: 5%; }
+    25%{ width: 0.5%; }
+    100%{ width: 20%; }
+  }
+  @-o-keyframes hrline-grow {
+    0%{ width: 5%; }
+    25%{ width: 0.5%; }
+    100%{ width: 20%; }
+  }
+
+@-moz-keyframes fade-in{
+    0%{ opacity: 0;}
+    100%{opacity:1;}
+}
+  @keyframes fade-in{  
+    0%{ opacity: 0;}
+    100%{opacity:1;}
+}
+@-webkit-keyframes fade-in{
+    0%{ opacity: 0;}
+    100%{opacity:1;}
+}
+@-ms-keyframes fade-in{
+    0%{ opacity: 0;}
+    100%{opacity:1;}
+}
+@-o-keyframes fade-in{
+    0%{ opacity: 0;}
+    100%{opacity:1;}
+}
+@-moz-keyframes fade-in{
+    0%{ opacity: 0;}
+    100%{opacity:1;}
+}
+.title { 
+    font-size: 40px;
+    opacity: 0;
+    animation: fade-in 2s ease 0s 1;
+    -webkit-animation: fade-in 2s ease 0s 1;
+    -moz-animation: fade-in 2s ease 0s 1;
+    -o-animation: fade-in 2s ease 0s 1;
+    -ms-animation: fade-in 2s ease 0s 1;
+    
+    animation-fill-mode:forwards;
+    -webkit-animation-fill-mode: forwards;  
+      -o-animation-fill-mode: forwards; 
+      -ms-animation-fill-mode: forwards;   
+      -moz-animation-fill-mode: forwards; 
+}
+.subtitle { 
+    font-size: 20px;
+    opacity: 0;
+    animation: fade-in 2s ease 1s 1;
+    -webkit-animation: fade-in 2s ease 1s 1;
+    -moz-animation: fade-in 2s ease 1s 1;
+    -o-animation: fade-in 2s ease 1s 1;
+    -ms-animation: fade-in 2s ease 1s 1;
+    
+    animation-fill-mode:forwards;
+    -webkit-animation-fill-mode: forwards;  
+      -o-animation-fill-mode: forwards; 
+      -ms-animation-fill-mode: forwards;   
+      -moz-animation-fill-mode: forwards; 
+}
+
+  .hrline {
+    border-top: 2px solid black;
+    vertical-align: middle;
+    height: auto;
+    animation: hrline-grow 2s ease 0s 1;
+    -webkit-animation: hrline-grow 2s ease 0s 1;
+    -moz-animation: hrline-grow 2s ease 0s 1;
+    -o-animation: hrline-grow 2s ease 0s 1;
+    -ms-animation: hrline-grow 2s ease 0s 1;
+    
+    animation-fill-mode:forwards;
+    -webkit-animation-fill-mode: forwards;  
+      -o-animation-fill-mode: forwards; 
+      -ms-animation-fill-mode: forwards;   
+      -moz-animation-fill-mode: forwards;
+  }
+
+  .main {
+      display: table;
+      width: 100%;
+      height: 500px;
+  }
+  .main-box {
+      background-color: #fafafa;
+      display: inline-block;
+      width: 25%;
+      height: 500px;
+      text-align: center;
+      margin: 5px;
+  }
+</style>
+
+<body>
+    <div id='root'>
+        <div class="top">
+            <div class="content">
+                <div class="title">plusplus7 加七</div>
+                <hr class="hrline">
+                </hr>
+                <div class="subtitle">我是一名软件工程师，爱好旅行、视频制作和游戏解说。</div>
+            </div>
+        </div>
+        <div class="main">
+            <div class="main-box">A</div>
+            <div class="main-box">B</div>
+            <div class="main-box">C</div>
+        </div>
+
+    </div>
+
+</body>
+
+</html>
