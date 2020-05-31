@@ -38,7 +38,7 @@ def gline(x1, y1, x2, y2):
 class S1(Scene):
 
     def construct(self):
-       # show_grid(self)
+        show_grid(self)
 
         def desktop(x, y):
             pc = SVGMobject("desktop")
@@ -60,10 +60,10 @@ class S1(Scene):
             return r
 
         r1 = router(-1, 2)
-        r2 = router(-1, -2)
+        r2 = router(-0.5, -1.5)
         r3 = router(2, 3)
-        r4 = router(2, -3)
-        r5 = router(4, -0.5)
+        r4 = router(2.25, -2)
+        r5 = router(3.5, -0.5)
         rs = VGroup(r1, r2, r3, r4, r5)
 
         def cloud(x, y):
@@ -75,15 +75,15 @@ class S1(Scene):
         c1 = cloud(0.75, 2)
         c2 = cloud(-1.5, 0)
         c3 = cloud(2.5, 1)
-        c4 = cloud(1, -1.5)
+        c4 = cloud(1, -1)
         c5 = cloud(-3.5, 2.5)
         c6 = cloud(-3.5, -2.5)
         cs = VGroup(c1, c2, c3, c4)
         csp = VGroup(c5, c6)
 
-        cc = Circle(radius=3.8)
+        cc = Circle(radius=3.3)
         cc.set_color(WHITE)
-        cc.move_to(p3(1, 0))
+        cc.move_to(p3(1, 0.5))
 
         self.play(Write(rs), FadeIn(cc), FadeIn(cs))
 
@@ -112,8 +112,11 @@ class S1(Scene):
         lat2.move_to(p3(-5.5, -3.5))
 
         pcst = TextMobject("游戏服务器")
+        pcstex = TextMobject("(海外)")
         pcst.scale(0.6)
+        pcstex.scale(0.6)
         pcst.move_to(p3(6, -1.75))
+        pcstex.next_to(pcst, DOWN)
         pcat = TextMobject("主机A")
         pcat.scale(0.6)
         pcat.move_to(p3(-6, 2.25))
@@ -139,7 +142,7 @@ class S1(Scene):
         self.play(GrowArrow(lr[2]),
                   GrowArrow(lr[3]))
         self.play(Write(pcs))
-        self.play(FadeIn(pcst))
+        self.play(FadeIn(pcst), FadeIn(pcstex))
         lr.append(Line(pcs, r5))
         self.play(GrowArrow(lr[13]))
         for i in range(5):
@@ -163,7 +166,7 @@ class S1(Scene):
 
         self.wait(1)
         self.play(FadeOut(lat1))
-        self.play(FadeOut(pcst))
+        self.play(FadeOut(pcst), FadeOut(pcstex))
         self.play(FadeOut(pcs), FadeOut(lr[13]))
 
         self.wait(3)
@@ -189,3 +192,92 @@ class S1(Scene):
         self.wait(1)
         self.play(FadeOut(lat2))
         self.wait(5)
+
+
+class S2(Scene):
+
+    def construct(self):
+        #show_grid(self)
+
+        def desktop(x, y):
+            pc = SVGMobject("desktop")
+            pc.move_to(p3(x, y))
+            return pc
+            
+        pcs = desktop(0,3)
+        pcs.set_color(BLUE)
+        def rectangle(w, h, c=BLACK, text=None, o=1):
+            rect = Rectangle(
+                width=w,
+                height=h,
+                fill_color=c,
+                fill_opacity=o,
+            )
+            if text == None:
+                return rect
+            t = TextMobject(text)
+            t.set_color(BLACK)
+            return VGroup(rect, t)
+
+        rec1 = rectangle(5.25, 4, o=0)
+        rec2 = rectangle(5.25, 4, o=0)
+        rec1.move_to(p3(-3.5, -1))
+        rec2.move_to(p3(3.5, -1))
+        r10 = rectangle(3.5, 0.75, text="N2N/Edge", c=WHITE)
+        r11 = rectangle(3.5, 0.75, text="TAP设备", c=BLUE)
+        r12 = rectangle(3.5, 0.75, text="应用", c=GOLD)
+        r20 = rectangle(3.5, 0.75, text="N2N/Edge", c=WHITE)
+        r21 = rectangle(3.5, 0.75, text="TAP设备", c=BLUE)
+        r22 = rectangle(3.5, 0.75, text="应用", c=GOLD)
+        ts = TextMobject("N2N 核心节点")
+        ts.scale(0.7)
+        ts.move_to(p3(0,1.7))
+        
+#        r10 = rectangle(3.5, 0.75, text="N2N/Edge", c=WHITE)
+#        r11 = rectangle(3.5, 0.75, text="TAP device", c=BLUE)
+#        r12 = rectangle(3.5, 0.75, text="Application", c=GOLD)
+#        r20 = rectangle(3.5, 0.75, text="N2N/Edge", c=WHITE)
+#        r21 = rectangle(3.5, 0.75, text="TAP device", c=BLUE)
+#        r22 = rectangle(3.5, 0.75, text="Application", c=GOLD)
+        r10.move_to(p3(-3.5, 0.4))
+        r11.move_to(p3(-3.5, -1.0))
+        r12.move_to(p3(-3.5, -2.4))
+        r20.move_to(p3(3.5, 0.4))
+        r21.move_to(p3(3.5, -1.))
+        r22.move_to(p3(3.5, -2.4))
+
+        self.play(FadeIn(pcs), FadeIn(ts))
+        self.play(FadeIn(rec1), FadeIn(rec2))
+        self.play(FadeIn(r10), FadeIn(r20))
+        self.play(FadeIn(r11), FadeIn(r21))
+        self.play(FadeIn(r12), FadeIn(r22))
+
+        self.play(GrowArrow(Arrow(p3(-4.5,-2.25), p3(-4.5, -1.10))))
+        self.wait(1)
+        self.play(GrowArrow(Arrow(p3(-4.5, -0.85), p3(-4.5, 0.25))))
+        self.wait(1)
+        self.play(GrowArrow(Arrow(p3(-3.5,0.6), pcs)))
+        self.wait(1)
+        self.play(GrowArrow(Arrow(pcs, p3(3.5,0.6))))
+        self.wait(1)
+        self.play(GrowArrow(Arrow(p3(4.5, 0.25), p3(4.5,-0.85))))
+        self.wait(1)
+        self.play(GrowArrow(Arrow(p3(4.5, -1.10), p3(4.5,-2.2))))
+        self.wait(1)
+
+        self.play(GrowArrow(Arrow(p3(2.5, -2.25), p3(2.5, -1.10))))
+        self.wait(1)
+        self.play(GrowArrow(Arrow(p3(2.5, -0.85), p3(2.5, 0.25))))
+        self.wait(1)
+        self.play(GrowArrow(Arrow(p3(4.5,0.6), p3(2, 2.5))))
+        self.wait(1)
+        self.play(GrowArrow(Arrow(p3(-2, 2.5), p3(-4.5,0.6))))
+        self.wait(1)
+        self.play(GrowArrow(Arrow(p3(-2.5,0.25), p3(-2.5, -0.85))))
+        self.wait(1)
+        self.play(GrowArrow(Arrow(p3(-2.5,-1.10), p3(-2.5, -2.2))))
+        self.wait(1)
+
+        self.play(GrowArrow(Arrow(p3(1.45, -0.85), p3(1.75, -0.85))), GrowArrow(DashedLine(p3(-1.75,-0.85), p3(1.75, -0.85))))
+        self.play(GrowArrow(Arrow(p3(-1.45, -1.15), p3(-1.75,-1.15))), GrowArrow(DashedLine(p3(1.75, -1.15), p3(-1.75,-1.15))))
+        self.wait(1)
